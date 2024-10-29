@@ -52,7 +52,7 @@ def process_in_parallel(df, chunk_size, product_matrix, full_df):
     return pd.concat(results, ignore_index=True)
 
 if __name__ == '__main__':
-    uploaded_file = st.file_uploader("Загрузите CSV файл", type=["csv"])
+    uploaded_file = st.file_uploader("Upload CSV file", type=["csv"])
 
     df_main = pd.DataFrame()
     if uploaded_file:
