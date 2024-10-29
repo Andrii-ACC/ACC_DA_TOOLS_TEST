@@ -7,7 +7,6 @@ import math
 from concurrent.futures import ProcessPoolExecutor, as_completed
 def count_cross_sells(row, product_matrix, full_df):
     try:
-        time.sleep(0.05)
         # Убедимся, что row содержит только названия продуктов
         items = list(row['item_comb'])  # Извлекаем первые два элемента комбинации
         mask = product_matrix[items].all(axis=1)
