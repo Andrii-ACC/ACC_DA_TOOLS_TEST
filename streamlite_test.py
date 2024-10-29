@@ -12,3 +12,4 @@ total = price * quantity
 # Кнопка для запуска вычислений
 if st.button("Calculate"):
     st.success(f"Total amount: {total} $.")
+uploaded_file = st.file_uploader("Load CSV file with sales", type=["csv"])
