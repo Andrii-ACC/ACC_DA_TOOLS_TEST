@@ -1,19 +1,10 @@
-from google.cloud import bigquery
-from google.oauth2 import service_account
-from tkinter import filedialog
 import pandas as pd
-import numpy as np
 from itertools import combinations
-import json
-import os
 import streamlit as st
 import re
-from io import StringIO
 import time
 import math
 from concurrent.futures import ProcessPoolExecutor, as_completed
-pd.set_option('display.max_columns', None)
-pd.set_option('display.max_colwidth', None)
 def count_cross_sells(row, product_matrix, full_df):
     try:
         time.sleep(0.05)
@@ -70,7 +61,13 @@ if __name__ == '__main__':
         df_main = pd.read_csv(uploaded_file)
         st.write("File uploaded successfully:")
         st.write(df_main.head())
+        if len(df_main.columns) < 4:
+            st.error("The downloaded CSV file does not have enough columns. Make sure the file contains 4 columns:\n'transaction_id', 'product_name', 'product_quantity', 'total_revenue'")
+        elif len(df_main.columns) > 4:
+            st.error("The downloaded CSV file has more columns than needed. Make sure the file contains 4 columns:'transaction_id', 'product_name', 'product_quantity', 'total_revenue'")
 
+        if list(df_main.columns) != ['transaction_id', 'product_name', 'product_quantity', 'total_revenue']:
+            df_main.columns = ['transaction_id', 'product_name', 'product_quantity', 'total_revenue']
     st.subheader("Select options")
     radio_quantity_items = st.radio("Choose quantity of items for calculations in a cross-selling table", ["Choose",1,2,3,4,5])
     radio_table_type_var = st.radio("Choose type of result table", ['None','25 items','100 items','25 AOV','100 AOV'])
