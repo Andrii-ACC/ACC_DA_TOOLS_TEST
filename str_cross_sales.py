@@ -53,6 +53,7 @@ def process_in_parallel(df, chunk_size, product_matrix, full_df):
     return pd.concat(results, ignore_index=True)
 
 if __name__ == '__main__':
+    st.image("acc_big_logo.png",width=100)
     tab1, tab2, tab3, tab4 = st.tabs(["Main page", "Cross-Sales App", "Tool number 2", "Tool number 3"])
 
     with tab1:
