@@ -79,6 +79,7 @@ if __name__ == '__main__':
         radio_quantity_items = st.radio("Choose quantity of items for calculations in a cross-selling table", ["Choose",1,2,3,4,5])
         radio_table_type_var = st.radio("Choose type of result table", ['None','25 items','100 items','25 AOV','100 AOV'])
         radio_aov_filter = st.radio("Choose range of items purchse AOV in a cross-selling table", ['None','<50','50-75','75-100','>100'])
+        radio_item_quantity_filter = st.radio("Select the minimum purchase quantity for each item", ['None',5,10,25,50])
 
         use_custom_pattern = st.checkbox("Use a regular expression pattern to remove variations from product names")
 
@@ -111,6 +112,16 @@ if __name__ == '__main__':
                 ].index
             df_main = df_main[df_main['transaction_id'].isin(valid_transaction_ids)]
 
+            if radio_item_quantity_filter !='None':
+                valid_product_names = df_main.groupby('product_name')['product_quantity'].sum()[
+                    df_main.groupby('product_name')['product_quantity'].sum() > radio_item_quantity_filter
+                    ].index
+                df_main = df_main[df_main['product_name'].isin(valid_product_names)]
+
+
+
+
+
             # Create df transaction_id|product_name
             item_df = df_main.groupby(['transaction_id'])['product_name'].apply('#'.join).reset_index()
 
@@ -135,11 +146,11 @@ if __name__ == '__main__':
             product_matrix = full_df['product_name'].str.get_dummies(sep='#')
 
 
-            start_time = time.time()
+            #start_time = time.time()
             cs_df = process_in_parallel(cs_df, chunk_size=100, product_matrix=product_matrix, full_df=full_df)
-            end_time = time.time()
-            execution_time = end_time - start_time
-            print(f"Время выполнения старой функции: {execution_time:.2f} секунд")
+            #end_time = time.time()
+            #execution_time = end_time - start_time
+            #print(f"Время выполнения старой функции: {execution_time:.2f} секунд")
 
 
             # Apply to all lines in cs_df count_cross_sells function and fill 'transactions' column init
