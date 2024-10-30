@@ -122,8 +122,7 @@ if __name__ == '__main__':
 
             # Concenate to dataframes to get full values
             full_df = pd.merge(item_df, int_df, on="transaction_id")
-            print(full_df)
-            st.write(full_df)
+
             # Create Series of names of uniques items
             products = pd.Series(df_main['product_name'].unique())
 
