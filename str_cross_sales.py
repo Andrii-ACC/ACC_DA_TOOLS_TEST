@@ -105,6 +105,12 @@ if __name__ == '__main__':
             if re_pattern !=None:
                 df_main['product_name'] = df_main['product_name'].apply(lambda x : re.sub(re_pattern, '', x))
 
+
+            valid_transaction_ids = df_main['transaction_id'].value_counts()[
+                df_main['transaction_id'].value_counts() >= radio_quantity_items
+                ].index
+            df_main = df_main[df_main['transaction_id'].isin(valid_transaction_ids)]
+
             # Create df transaction_id|product_name
             item_df = df_main.groupby(['transaction_id'])['product_name'].apply('#'.join).reset_index()
 
@@ -116,7 +122,8 @@ if __name__ == '__main__':
 
             # Concenate to dataframes to get full values
             full_df = pd.merge(item_df, int_df, on="transaction_id")
-
+            print(full_df)
+            st.write(full_df)
             # Create Series of names of uniques items
             products = pd.Series(df_main['product_name'].unique())
 
