@@ -114,7 +114,7 @@ if __name__ == '__main__':
 
             if radio_item_quantity_filter !='None':
                 valid_product_names = df_main.groupby('product_name')['product_quantity'].sum()[
-                    df_main.groupby('product_name')['product_quantity'].sum() > radio_item_quantity_filter
+                    df_main.groupby('product_name')['product_quantity'].sum() >= radio_item_quantity_filter
                     ].index
                 df_main = df_main[df_main['product_name'].isin(valid_product_names)]
 
