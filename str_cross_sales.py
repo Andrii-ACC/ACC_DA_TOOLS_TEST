@@ -18,7 +18,8 @@ def update_contact():
 
 def send_slack_notification(data):
     # Замените на свой Webhook-URL
-    webhook_url = "https://hooks.slack.com/services/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"
+    print(st.secrets['SLACK_WEBHOOK_URL'])
+    webhook_url = st.secrets['SLACK_WEBHOOK_URL']
 
     # Форматируем сообщение
     message = f"""
