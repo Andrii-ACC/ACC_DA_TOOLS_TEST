@@ -1,4 +1,5 @@
-aiohttp @ file:///Users/runner/miniforge3/conda-bld/aiohttp_1701099584873/work
+aiohappyeyeballs==2.4.3
+aiohttp==3.10.10
 aiosignal @ file:///home/conda/feedstock_root/build_artifacts/aiosignal_1667935791922/work
 altair==5.4.1
 altgraph @ file:///home/conda/feedstock_root/build_artifacts/altgraph_1695642967802/work
@@ -140,6 +141,7 @@ pkgutil_resolve_name @ file:///home/conda/feedstock_root/build_artifacts/pkgutil
 platformdirs @ file:///home/conda/feedstock_root/build_artifacts/platformdirs_1706713388748/work
 prometheus-client @ file:///home/conda/feedstock_root/build_artifacts/prometheus_client_1700579315247/work
 prompt-toolkit @ file:///home/conda/feedstock_root/build_artifacts/prompt-toolkit_1702399386289/work
+propcache==0.2.0
 proto-plus @ file:///home/conda/feedstock_root/build_artifacts/proto-plus_1702003338643/work
 protobuf==4.25.1
 psutil @ file:///Users/runner/miniforge3/conda-bld/psutil_1705722460205/work
@@ -216,6 +218,6 @@ websocket-client @ file:///home/conda/feedstock_root/build_artifacts/websocket-c
 wheel==0.42.0
 widgetsnbextension @ file:///home/conda/feedstock_root/build_artifacts/widgetsnbextension_1694598693908/work
 xyzservices @ file:///home/conda/feedstock_root/build_artifacts/xyzservices_1698325309404/work
-yarl @ file:///Users/runner/miniforge3/conda-bld/yarl_1705508643525/work
+yarl==1.17.1
 zict @ file:///home/conda/feedstock_root/build_artifacts/zict_1681770155528/work
 zipp @ file:///home/conda/feedstock_root/build_artifacts/zipp_1695255097490/work
