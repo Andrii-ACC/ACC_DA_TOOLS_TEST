@@ -3,8 +3,45 @@ from itertools import combinations
 import streamlit as st
 import re
 import time
+import json
+import requests
+from datetime import datetime
 import math
 from concurrent.futures import ProcessPoolExecutor, as_completed
+import gspread
+from google.oauth2.service_account import Credentials
+
+TOOLS_LIST = ["Main page", "Cross-Sales App", "Tool number 2", "Tool number 3"]
+DA_NAMES = ["Amar","Djordje","Tarik","other"]
+def update_contact():
+    st.session_state.contact = st.session_state.contact_select
+
+def send_slack_notification(data):
+    # Замените на свой Webhook-URL
+    webhook_url = "https://hooks.slack.com/services/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"
+
+    # Форматируем сообщение
+    message = f"""
+    :bell: **Новое обращение от пользователя:**
+    *Topic:* {data['topic']}
+    *Tool:* {data['tool_name']}
+    *Description:* {data['description']}
+    *Priority:* {data['priority']}
+    *Contact:* {data['contact']}
+    *Date and time:* {data['submit_time']}
+    """
+
+    # Создаем JSON-полезную нагрузку
+    payload = {"text": message}
+
+    # Отправляем POST-запрос на Webhook URL
+    response = requests.post(webhook_url, json=payload)
+
+    # Проверка ответа
+    if response.status_code == 200:
+        print("Уведомление успешно отправлено в Slack")
+    else:
+        print(f"Ошибка при отправке уведомления: {response.status_code}, {response.text}")
 
 
 def count_cross_sells(row, product_matrix, full_df):
@@ -59,11 +96,67 @@ if __name__ == '__main__':
         layout="wide",
     )
     st.image("acc_big_logo.png",width=100)
-    tab1, tab2, tab3, tab4 = st.tabs(["Main page", "Cross-Sales App", "Tool number 2", "Tool number 3"])
+    main_page, tab2, tab3, tab4 = st.tabs(TOOLS_LIST)
 
-    with tab1:
+    with main_page:
         st.header("Welcome to the DAs Toolkit!")
         st.write('''This platform is designed to provide small but powerful tools to make your daily tasks easier and more efficient. We're just getting started, and there’s more to come!Have ideas for tools that could streamline your work? We’d love to hear your suggestions—your input will help shape future updates. Let’s build a smarter, more efficient workplace together!''')
+        st.write(
+            "If you have ideas for a new tool, suggestions for improvement, or problems, please fill out the form below."
+        )
+
+        # Форма для ввода данных
+        with st.form(key='feedback_form'):
+            topic = st.selectbox(
+                "Select the subject of your request",
+                ["New idea for a tool", "Modify an existing tool", "Report a problem/question"]
+            )
+            tool_name = st.text_input("Name of the tool (if applicable)")
+
+            description = st.text_area("Description of the idea / problem", height=200)
+
+            priority = st.selectbox("Priority", ["Low", "Medium", "High"])
+
+            contact = st.selectbox(
+                "Your name",
+                DA_NAMES
+            )
+
+
+
+
+            submit_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")  # Время подачи заявки
+
+            # Кнопка отправки формы
+            submit_button = st.form_submit_button(label="Send")
+
+        # Обработка отправки формы
+        if submit_button:
+
+            scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/spreadsheets",
+                     "https://www.googleapis.com/auth/drive.file", "https://www.googleapis.com/auth/drive"]
+
+            creds = Credentials.from_service_account_info(dict(st.secrets['GS_DS_CRED']), scopes=scope)
+
+
+            client = gspread.authorize(creds)
+            sheet = client.open("DAs toolkit requests").sheet1  # или client.open_by_key("sheet_id")
+
+            if description.strip() == "":
+                st.error("Description cannot be empty.")
+            else:
+                data = {
+                    "topic": topic,
+                    "tool_name": tool_name,
+                    "description": description,
+                    "priority": priority,
+                    "contact": contact,
+                    "submit_time": submit_time
+                }
+                sheet.append_row(list(data.values()))
+                send_slack_notification(data)# Добавляем строку в Google Sheets
+                st.success("Спасибо! Ваша форма успешно отправлена.")
+
     with tab2:
         uploaded_file = st.file_uploader("Upload CSV file", type=["csv"])
 
