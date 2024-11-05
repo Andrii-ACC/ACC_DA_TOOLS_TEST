@@ -23,7 +23,7 @@ def send_slack_notification(data):
 
     # Форматируем сообщение
     message = f"""
-    :bell: **Новое обращение от пользователя:**
+    :bell: **New request from {data['contact']}:**
     *Topic:* {data['topic']}
     *Tool:* {data['tool_name']}
     *Description:* {data['description']}
@@ -40,9 +40,9 @@ def send_slack_notification(data):
 
     # Проверка ответа
     if response.status_code == 200:
-        print("Уведомление успешно отправлено в Slack")
+        print("Notification of successful sending to Slack")
     else:
-        print(f"Ошибка при отправке уведомления: {response.status_code}, {response.text}")
+        print(f"Error sending notification: {response.status_code}, {response.text}")
 
 
 def count_cross_sells(row, product_matrix, full_df):
@@ -308,3 +308,7 @@ if __name__ == '__main__':
                 file_name="cross_sales_results.csv",
                 mime="text/csv"
             )
+    with tab3:
+        pass
+#st.header("VisContext Analyzer")
+
