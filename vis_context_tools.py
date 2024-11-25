@@ -13,7 +13,6 @@ import streamlit as st
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
-from webdriver_manager.chrome import ChromeDriverManager
 
 
 
@@ -149,7 +148,6 @@ Conclusion: Emphasize the benefits of testing these section-specific changes to 
 def screenshot_by_url(website: str):
     chromium_path = '/usr/bin/chromium'
     chrome_driver_path = '/usr/bin/chromedriver'
-
     options = Options()
     options.binary_location = chromium_path
     options.add_argument('--headless')  # Run in headless mode.
@@ -175,10 +173,18 @@ def screenshot_by_url(website: str):
     return driver.find_element(By.TAG_NAME, 'body').screenshot_as_base64  # avoids scrollbar
 
 def get_text_content_by_url (url : str):
-
+    chromium_path = '/usr/bin/chromium'
+    chrome_driver_path = '/usr/bin/chromedriver'
     options = Options()
-    options.add_argument('--headless=new')
-    driver = webdriver.Chrome( options=options)
+    options.binary_location = chromium_path
+    options.add_argument('--headless')  # Run in headless mode.
+    options.add_argument('--disable-gpu')
+    options.add_argument('--no-sandbox')  # Bypass OS security model.
+    options.add_argument('--disable-dev-shm-usage')  # Overcome limited resource problems.
+    options.add_argument('--window-size=1920,1200')
+
+    service = Service(executable_path=chrome_driver_path)
+    driver = webdriver.Chrome(service=service, options=options)
     driver.get(url)
 
     # Закрываем драйвер
