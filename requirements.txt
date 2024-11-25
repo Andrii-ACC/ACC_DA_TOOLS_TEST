@@ -5,4 +5,5 @@ beautifulsoup4==4.12.3
 crewai==0.76.9
 crewai-tools==0.13.4
 pysqlite3-binary
-webdriver_manager==4.0.2
+webdriver-manager
+psutil
