@@ -451,9 +451,7 @@ if __name__ == '__main__':
         from selenium.webdriver.chrome.service import Service
         from os.path import exists
 
-        st.set_page_config(page_title="🎈 App Screenshot")
-        st.title('🎈 App Screenshot')
-        st.warning('An app for taking screenshot of a Streamlit app.')
+
 
 
         # @st.cache_resource
