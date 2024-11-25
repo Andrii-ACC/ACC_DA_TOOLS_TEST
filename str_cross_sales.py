@@ -20,7 +20,7 @@ from vis_context_tools import promt_chooser,screenshot_by_url, get_text_content_
 from get_clickup_info_by_client import get_ab_test_tickets_info_by_client_name, get_list_of_clients_names
 
 TOOLS_LIST = ["Main page", "Cross-Sales App", "VisContext Analyzer", "Tool number 3"]
-DA_NAMES = ["Amar","Djordje","Tarik","other"]
+DA_NAMES = ["Amar","Djordje","Tarik","Axel","Denis","JDK","other"]
 if "CLIENTS_LIST" not in st.session_state.keys() or st.session_state["CLIENTS_LIST"] == None:
     st.session_state['CLIENTS_LIST'] = get_list_of_clients_names()
 def update_contact():
@@ -109,7 +109,7 @@ if __name__ == '__main__':
     main_page, tab2, tab3, tab4 = st.tabs(TOOLS_LIST)
 
     with main_page:
-        st.header("Welcome to the DAs Toolkit!")
+        st.header("Welcome to the Toolkit!")
         st.write('''This platform is designed to provide small but powerful tools to make your daily tasks easier and more efficient. We're just getting started, and there’s more to come!Have ideas for tools that could streamline your work? We’d love to hear your suggestions—your input will help shape future updates. Let’s build a smarter, more efficient workplace together!''')
         st.write(
             "If you have ideas for a new tool, suggestions for improvement, or problems, please fill out the form below."
