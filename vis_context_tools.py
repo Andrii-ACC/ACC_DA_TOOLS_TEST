@@ -152,8 +152,9 @@ def screenshot_by_url(website: str):
     options.add_argument('--disable-gpu')
     options.add_argument('--window-size=1920,1200')
     options.add_argument("--start-maximized")
-    driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()),
+    driver = webdriver.Chrome(service=Service(ChromeDriverManager(driver_version='120.0.6099.224').install()),
                               options=options)
+
 
 
     driver.get(website)
