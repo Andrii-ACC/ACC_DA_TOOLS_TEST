@@ -148,11 +148,12 @@ Conclusion: Emphasize the benefits of testing these section-specific changes to 
     return [prompt,expected_output]
 def screenshot_by_url(website: str):
     options = webdriver.ChromeOptions()
+    service = Service()
     options.add_argument('--headless')
     options.add_argument('--disable-gpu')
     options.add_argument('--window-size=1920,1200')
     options.add_argument("--start-maximized")
-    driver = webdriver.Chrome(service=Service(ChromeDriverManager(driver_version='120.0.6099.224').install()),
+    driver = webdriver.Chrome(service=service,
                               options=options)
 
 
