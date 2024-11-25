@@ -147,7 +147,7 @@ Conclusion: Emphasize the benefits of testing these section-specific changes to 
 
     return [prompt,expected_output]
 def screenshot_by_url(website: str):
-    chromium_path = '/usr/bin/chromium-browser'
+    chromium_path = '/usr/bin/chromium'
     chrome_driver_path = '/usr/bin/chromedriver'
 
     options = Options()
