@@ -129,10 +129,10 @@ if __name__ == '__main__':
 
             contact = st.selectbox(
                 "Your name",
-                DA_NAMES
+                DA_NAMES,
+
             )
-            if contact == "other":
-                contact = st.text_input("Input your name")
+
 
 
 
