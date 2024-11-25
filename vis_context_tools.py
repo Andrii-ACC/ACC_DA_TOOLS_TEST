@@ -8,6 +8,20 @@ from bs4 import BeautifulSoup
 from selenium.webdriver.chrome.options import Options
 from crewai import Crew, Agent, Task,Process
 from langchain_openai import ChatOpenAI
+import streamlit as st
+
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.chrome.service import Service
+from webdriver_manager.chrome import ChromeDriverManager
+from webdriver_manager.core.os_manager import ChromeType
+
+
+
+
+
+
+
 
 
 def promt_chooser (analysis_type,result_type,company_name,target_audience,current_date,product_type,page_type,text_content = "Some Text Content"):
@@ -132,14 +146,26 @@ Conclusion: Emphasize the benefits of testing these section-specific changes to 
 
     return [prompt,expected_output]
 def screenshot_by_url(website: str):
-    options = webdriver.ChromeOptions()
+    options = Options()
+    options.add_argument("--disable-gpu")
     options.add_argument("--window-size=1920,1080")
     options.add_argument("--start-maximized")
+    options.add_argument("--headless")
 
-    options.add_argument("--headless=new")
+    def get_driver():
+        return webdriver.Chrome(
+            service=Service(
+                ChromeDriverManager(chrome_type=ChromeType.CHROMIUM).install()
+            ),
+            options=options,
+        )
 
-    service = webdriver.ChromeService(executable_path='/opt/homebrew/bin/chromedriver')
-    driver = webdriver.Chrome(service=service, options=options)
+
+
+
+
+
+    driver = get_driver()
     driver.get(website)
     time.sleep(1)
     width = driver.execute_script(
