@@ -147,14 +147,19 @@ Conclusion: Emphasize the benefits of testing these section-specific changes to 
 
     return [prompt,expected_output]
 def screenshot_by_url(website: str):
-    options = webdriver.ChromeOptions()
-    service = Service()
-    options.add_argument('--headless')
+    chromium_path = '/usr/bin/chromium-browser'
+    chrome_driver_path = '/usr/bin/chromedriver'
+
+    options = Options()
+    options.binary_location = chromium_path
+    options.add_argument('--headless')  # Run in headless mode.
     options.add_argument('--disable-gpu')
+    options.add_argument('--no-sandbox')  # Bypass OS security model.
+    options.add_argument('--disable-dev-shm-usage')  # Overcome limited resource problems.
     options.add_argument('--window-size=1920,1200')
-    options.add_argument("--start-maximized")
-    driver = webdriver.Chrome(service=service,
-                              options=options)
+
+    service = Service(executable_path=chrome_driver_path)
+    driver = webdriver.Chrome(service=service, options=options)
 
 
 
