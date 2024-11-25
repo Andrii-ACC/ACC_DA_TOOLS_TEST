@@ -1,3 +1,4 @@
 gspread==5.12.4
 openai==1.53.0
 selenium==4.26.1
+beautifulsoup4==4.12.3
