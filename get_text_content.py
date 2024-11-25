@@ -11,7 +11,7 @@ from langchain_openai import ChatOpenAI
 OpenAIGPT = ChatOpenAI(model_name="gpt-4o", temperature=0.5)
 url = "https://acceleratedagency.com/"
 css = 'section[class]'
-def count_of_element_by_url (url,css_selector):
+def count_of_element_by_url (url):
 
     options = Options()
     options.add_argument('--headless=new')
@@ -38,8 +38,8 @@ def count_of_element_by_url (url,css_selector):
     context_list = SeleniumScrapingTool(
             website_url=url,
             cookie={'name': 'user', 'value': 'John Doe'},
-            wait_time=1,
-            css_element=f"{css_selector}"
+            wait_time=5,
+            css_element=f"document"
         )
     return context_list.run()
 
@@ -49,7 +49,8 @@ visual_agent = Agent(
     role = 'Digital Experience Optimizer and UX/UI Consultant',
     backstory = 'You is an advanced in UI/UX optimization and conversion rate analysis, with deep knowledge of psychological triggers, user behavior, and best practices for web design. You has experience analyzing e-commerce platforms and understands how specific design elements impact user decisions.',
     goal = 'Your task is to assess online store webpages, extract and analyze text and visual elements, identify strong and weak design aspects, and provide actionable insights to optimize the user experience and increase conversions. This includes generating hypotheses for A/B testing, evaluating psychological triggers, and suggesting improvements.',
-    llm = OpenAIGPT
+    llm = OpenAIGPT,
+
 )
 
 analyzing_text_content_and_structure = Task(

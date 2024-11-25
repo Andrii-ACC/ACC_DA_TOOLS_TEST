@@ -3,22 +3,28 @@ from itertools import combinations
 import streamlit as st
 import re
 import time
+from datetime import date
+import os
 import json
+import base64
 import requests
 from datetime import datetime
 import math
 from concurrent.futures import ProcessPoolExecutor, as_completed
 import gspread
 from google.oauth2.service_account import Credentials
+from vis_context_tools import promt_chooser,screenshot_by_url, get_text_content_by_url, llm_analysis_of_image, llm_analysis_of_text
+from get_clickup_info_by_client import get_ab_test_tickets_info_by_client_name, get_list_of_clients_names
 
-TOOLS_LIST = ["Main page", "Cross-Sales App", "Tool number 2", "Tool number 3"]
+TOOLS_LIST = ["Main page", "Cross-Sales App", "VisContext Analyzer", "Tool number 3"]
 DA_NAMES = ["Amar","Djordje","Tarik","other"]
+if "CLIENTS_LIST" not in st.session_state.keys() or st.session_state["CLIENTS_LIST"] == None:
+    st.session_state['CLIENTS_LIST'] = get_list_of_clients_names()
 def update_contact():
     st.session_state.contact = st.session_state.contact_select
 
 def send_slack_notification(data):
     # Замените на свой Webhook-URL
-    print(st.secrets['SLACK_WEBHOOK_URL'])
     webhook_url = st.secrets['SLACK_WEBHOOK_URL']
 
     # Форматируем сообщение
@@ -309,6 +315,126 @@ if __name__ == '__main__':
                 mime="text/csv"
             )
     with tab3:
-        pass
-#st.header("VisContext Analyzer")
+
+
+        st.header("VisContext Analyzer")
+        analysis_type = st.selectbox(
+            "Select the type of analysis",
+            ["Choose","Text Content Analysis", "Full Screenshot Analysis", "Section-Specific Screenshot Analysis"]
+        )
+        result_type = st.selectbox(
+            "Select the type of analysis result",
+            ["Choose","Strengths and Weaknesses Analysis", "Hypothesis Formation for A/B Testing"]
+        )
+
+        if analysis_type != 'Choose' and result_type != 'Choose':
+            company_name = st.selectbox(
+            "Choose the company name",
+            st.session_state['CLIENTS_LIST']
+
+        )
+            target_audience = st.text_input("Describe your target audience")
+            current_date = date.today()
+            product_type = st.text_input("Describe the product sold by the company")
+            page_type = st.selectbox(
+            "Select the type of page to analyze",
+            ["Choose", "Homepage","Product Page","Colection Page","Cart page", "Checkout Page", "CartLayer","Navigation bar","Navigation Layer"]
+        )
+            if analysis_type == "Text Content Analysis":
+                url_of_text_content = st.text_input("Insert a link to the page from which the text content will be taken")
+            elif analysis_type == "Full Screenshot Analysis":
+                url_or_img_of_content = st.radio("Select a method for taking a screenshot",["Upload screenshot","Take from page URL"])
+                if url_or_img_of_content=="Upload screenshot":
+                    img_of_content = st.file_uploader("Load screenshot",type=["jpg","png"])
+                elif url_or_img_of_content=="Take from page URL":
+                    url_of_img_content = st.text_input(
+                        "Insert a link to the page from which the screenshot will be taken")
+            elif analysis_type == "Section-Specific Screenshot Analysis":
+                img_of_content = st.file_uploader("Load screenshot of page section",type=["jpg","png"])
+
+            if st.button("Generate prompt"):
+
+
+
+
+                if company_name == "":
+                    st.error("Error! The company name field cannot be empty.")
+                elif target_audience == "":
+                    st.error("Error! The target audience field cannot be empty.")
+                elif product_type == "":
+                    st.error("Error! The product type field cannot be empty.")
+                elif page_type == "Choose":
+                    st.error("Error! You must select an analysis page.")
+                elif 'url_of_text_content' in locals() and url_of_text_content =='':
+                    st.error("Error! You must provide the URL to the page with the tag for analysis.")
+                elif 'img_of_content' in locals() and img_of_content ==None:
+                    st.error("Error! You must provide a screenshot of the page being analyzed..")
+                elif 'url_of_img_content' in locals() and url_of_img_content =='':
+                    st.error("You must provide the page URL for visual analysis.")
+
+
+                prompt_ex_res_list = promt_chooser(analysis_type = analysis_type,
+                                                   result_type=result_type,
+                                                   company_name = company_name,
+                                                   target_audience = target_audience,
+                                                   current_date = current_date,
+                                                   product_type = product_type,
+                                                   page_type = page_type)
+
+                st.session_state["fixed_prompt"] = prompt_ex_res_list[0]
+                st.session_state["fixed_result"] = prompt_ex_res_list[1]
+
+
+                if result_type == "Hypothesis Formation for A/B Testing":
+                    st.session_state['ab_tests_of_client'] = get_ab_test_tickets_info_by_client_name(company_name)
+                    st.session_state["fixed_prompt"] = prompt_ex_res_list[0] + st.session_state['ab_tests_of_client']
+
+            st.divider()
+            st.subheader("Prompt for LLM analysis")
+            fixed_prompt = st.text_area(label="This prompt will be used as a task for LLM analysis. If you want to change the task, change the text below.",
+                                        value=st.session_state.get("fixed_prompt", ""),
+                                        height=300,
+                                        key="fixed_prompt")
+            st.divider()
+            st.subheader("Expected output of LLM analysis")
+            fixed_result = st.text_area(label="This prompt will be used as a hint about the expected type of result for LLM analysis. If you want to change the expected result, change the text below. IMPORTANT! If you use Text Content Analysis, do not change the last line 'Some Text Content', later during the analysis it will be replaced by the text context from the web page!",
+                                        value=st.session_state.get("fixed_result", ""),
+                                        height=300,
+                                        key="fixed_result")
+
+            if st.button("Start LLM analysis"):
+
+                with st.spinner("Analyzing..."):
+
+                    # Пример долгой задачи
+
+                    fixed_prompt = st.session_state["fixed_prompt"]
+                    fixed_result = st.session_state["fixed_result"]
+
+                    os.environ["OPENAI_API_KEY"] = st.secrets['OPENAI_API_KEY']
+                    os.environ["OPENAI_ORGANIZATION"] = st.secrets['OPENAI_ORGANIZATION']
+                    if analysis_type == "Text Content Analysis":
+                        text_content = get_text_content_by_url(url_of_text_content)
+
+                        result_of_llm_analysis = llm_analysis_of_text(text_content,fixed_prompt,fixed_result)
+                    elif analysis_type == "Full Screenshot Analysis" :
+                        if url_or_img_of_content =="Upload screenshot":
+                            screenshot = img_of_content.read()
+
+                            screenshot = base64.b64encode(screenshot).decode("utf-8")
+                        elif url_or_img_of_content =="Take from page URL":
+                            screenshot = screenshot_by_url(url_of_img_content)
+                        result_of_llm_analysis = llm_analysis_of_image(screenshot,f"{fixed_prompt}\n\nGive your final answer in the following structure:\n{fixed_result}")
+                    elif analysis_type == "Section-Specific Screenshot Analysis":
+                        screenshot = img_of_content.read()
+                        screenshot = base64.b64encode(screenshot).decode("utf-8")
+                        result_of_llm_analysis = llm_analysis_of_image(screenshot,f"{fixed_prompt}\n\nGive your final answer in the following structure:\n{fixed_result}")
+                st.success("Analysis complete!")
+                st.write(result_of_llm_analysis)
+
+
+
+
+
+
 
