@@ -152,6 +152,7 @@ def screenshot_by_url(website: str):
     options.add_argument("--start-maximized")
     options.add_argument("--headless")
 
+    @st.cache_resource
     def get_driver():
         return webdriver.Chrome(
             service=Service(
