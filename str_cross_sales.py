@@ -18,9 +18,40 @@ import gspread
 from google.oauth2.service_account import Credentials
 from vis_context_tools import promt_chooser,screenshot_by_url, get_text_content_by_url, llm_analysis_of_image, llm_analysis_of_text
 from get_clickup_info_by_client import get_ab_test_tickets_info_by_client_name, get_list_of_clients_names
+import hmac
 
 TOOLS_LIST = ["Main page", "Cross-Sales App", "VisContext Analyzer", "Tool number 3"]
 DA_NAMES = ["Amar","Djordje","Tarik","Axel","Denis","JDK","other"]
+
+
+
+def check_password():
+    """Returns `True` if the user had the correct password."""
+
+    def password_entered():
+        """Checks whether a password entered by the user is correct."""
+        if hmac.compare_digest(st.session_state["password"], st.secrets["password"]):
+            st.session_state["password_correct"] = True
+            del st.session_state["password"]  # Don't store the password.
+        else:
+            st.session_state["password_correct"] = False
+
+    # Return True if the password is validated.
+    if st.session_state.get("password_correct", False):
+        return True
+
+    # Show input for password.
+    st.text_input(
+        "Password", type="password", on_change=password_entered, key="password"
+    )
+    if "password_correct" in st.session_state:
+        st.error("😕 Password incorrect")
+    return False
+
+
+if not check_password():
+    st.stop()  # Do not continue if check_password is not True.
+
 if "CLIENTS_LIST" not in st.session_state.keys() or st.session_state["CLIENTS_LIST"] == None:
     st.session_state['CLIENTS_LIST'] = get_list_of_clients_names()
 def update_contact():
@@ -341,10 +372,12 @@ if __name__ == '__main__':
             target_audience = st.text_input("Describe your target audience")
             current_date = date.today()
             product_type = st.text_input("Describe the product sold by the company")
+            industry_type = st.text_input("Write the industry in which this company operates.")
             page_type = st.selectbox(
             "Select the type of page to analyze",
-            ["Choose", "Homepage","Product Page","Colection Page","Cart page", "Checkout Page", "CartLayer","Navigation bar","Navigation Layer"]
+            ["Choose", "Homepage","Product Page","Colection Page","Cart page", "Checkout Page", "CartLayer","Navigation bar","Navigation Layer", "Landing page"]
         )
+            promt_chooser_radio = st.radio("Select whose prompt template to use",['Andrii', 'Denis'])
             if analysis_type == "Text Content Analysis":
                 url_of_text_content = st.text_input("Insert a link to the page from which the text content will be taken")
             elif analysis_type == "Full Screenshot Analysis":
@@ -364,18 +397,25 @@ if __name__ == '__main__':
 
                 if company_name == "":
                     st.error("Error! The company name field cannot be empty.")
+                    st.stop()
                 elif target_audience == "":
                     st.error("Error! The target audience field cannot be empty.")
+                    st.stop()
                 elif product_type == "":
                     st.error("Error! The product type field cannot be empty.")
+                    st.stop()
                 elif page_type == "Choose":
                     st.error("Error! You must select an analysis page.")
+                    st.stop()
                 elif 'url_of_text_content' in locals() and url_of_text_content =='':
                     st.error("Error! You must provide the URL to the page with the tag for analysis.")
+                    st.stop()
                 elif 'img_of_content' in locals() and img_of_content ==None:
                     st.error("Error! You must provide a screenshot of the page being analyzed..")
+                    st.stop()
                 elif 'url_of_img_content' in locals() and url_of_img_content =='':
                     st.error("You must provide the page URL for visual analysis.")
+                    st.stop()
 
 
                 prompt_ex_res_list = promt_chooser(analysis_type = analysis_type,
@@ -384,7 +424,9 @@ if __name__ == '__main__':
                                                    target_audience = target_audience,
                                                    current_date = current_date,
                                                    product_type = product_type,
-                                                   page_type = page_type)
+                                                   page_type = page_type,
+                                                   industry_type = industry_type,
+                                                   promt_chooser_radio = promt_chooser_radio)
 
                 st.session_state["fixed_prompt"] = prompt_ex_res_list[0]
                 st.session_state["fixed_result"] = prompt_ex_res_list[1]
