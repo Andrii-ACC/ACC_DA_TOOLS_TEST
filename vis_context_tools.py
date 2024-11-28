@@ -167,7 +167,7 @@ def promt_chooser (analysis_type,result_type,company_name,target_audience,curren
                 expected_output = f"""Strengths and Weaknesses Analysis:
     
     Introduction
-      Briefly summarize the effectiveness of the {industry_type}-specific {product_type} page’s written content in engaging the target audience and guiding them toward conversion. Mention any industry standards or benchmarks that are relevant.
+      Briefly summarize the effectiveness of the {industry_type} - specific {product_type} page’s written content in engaging the target audience and guiding them toward conversion. Mention any industry standards or benchmarks that are relevant.
     
     Strengths
       List the effective text elements tailored to the {industry_type}, such as:

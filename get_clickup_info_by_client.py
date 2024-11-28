@@ -115,7 +115,7 @@ def get_list_of_clients_names():
     clients_folders_names_list = []
     for space in spaces_response['spaces']:
 
-        if re.fullmatch(r"[a-z]* team$", space['name'].lower()):
+        if re.fullmatch(r".*team$", space['name'].lower()):
             folders_url = f'https://api.clickup.com/api/v2/space/{space["id"]}/folder'
             folders_response = requests.get(folders_url, headers=headers).json()
 
