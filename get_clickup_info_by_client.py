@@ -79,9 +79,9 @@ def get_ab_test_data_by_client_name(client_name):
     return None
 
 # Usage example
-folder_name_input = 'Educate'
+
 def get_ab_test_tickets_info_by_client_name (client_name):
-    list_of_tests = get_ab_test_data_by_client_name(folder_name_input)
+    list_of_tests = get_ab_test_data_by_client_name(client_name)
     finall_prompt_list = []
     for test in list_of_tests:
         if test['simplified user fields']['Task Stage'] == "Killed":
