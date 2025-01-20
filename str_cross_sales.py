@@ -571,8 +571,7 @@ if __name__ == '__main__':
                 st.write(result_of_llm_analysis)
     with tab4:
         st.title("COMING SOON CHAT WITH GA4 DATA")
-        while True:
-            time.sleep(5)
+
         # st.title("GA4 Chat")
         # ga4_client_name = st.selectbox(
         #     "Choose the company name",
