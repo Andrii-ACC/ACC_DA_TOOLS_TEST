@@ -257,7 +257,7 @@ if __name__ == '__main__':
                 st.success("Спасибо! Ваша форма успешно отправлена.")
 
     with tab2:
-        if 'cs_df' not in st.session_state:
+        if 'cs_df' not in st.session_state.keys():
             st.session_state['cs_df'] = None
 
         uploaded_file = st.file_uploader("Upload CSV file", type=["csv"])
