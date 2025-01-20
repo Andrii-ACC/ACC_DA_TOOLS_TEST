@@ -257,7 +257,7 @@ if __name__ == '__main__':
                 st.success("Спасибо! Ваша форма успешно отправлена.")
 
     with tab2:
-        print(st.session_state.keys())
+        print("121221221121212121212",st.session_state.keys())
         if 'cs_df' not in st.session_state.keys():
             st.session_state['cs_df'] = None
 
