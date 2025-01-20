@@ -7,3 +7,4 @@ crewai-tools==0.13.4
 pysqlite3-binary
 webdriver-manager
 psutil
+google-analytics-data
