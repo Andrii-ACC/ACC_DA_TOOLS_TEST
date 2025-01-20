@@ -257,7 +257,6 @@ if __name__ == '__main__':
                 st.success("Спасибо! Ваша форма успешно отправлена.")
 
     with tab2:
-        print("121221221121212121212",st.session_state.keys())
         if 'cs_df' not in st.session_state:
             st.session_state['cs_df'] = None
         else:
@@ -571,7 +570,9 @@ if __name__ == '__main__':
                 st.success("Analysis complete!")
                 st.write(result_of_llm_analysis)
     with tab4:
-
+        st.title("COMING SOON CHAT WITH GA4 DATA")
+        while True:
+            time.sleep(5)
         st.title("GA4 Chat")
         ga4_client_name = st.selectbox(
             "Choose the company name",
