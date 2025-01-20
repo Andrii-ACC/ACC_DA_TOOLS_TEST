@@ -573,31 +573,31 @@ if __name__ == '__main__':
         st.title("COMING SOON CHAT WITH GA4 DATA")
         while True:
             time.sleep(5)
-        st.title("GA4 Chat")
-        ga4_client_name = st.selectbox(
-            "Choose the company name",
-            st.session_state['CLIENTS_LIST']
-        )
-        ga4_chat_or_table = st.radio("Select whether you want to create a Chat with GA4 data or create a Table.",["Chat","Table"])
-        ga4_text_for_prompt = st.text_area(label="Enter a question or task for your GA4 data.",
-                                        height=300)
-        if st.button("Get an Answer"):
-            st.session_state["GA4 CHAT TEXT"] += ga4_text_for_prompt
-            property_id = st.secrets["GA4_DICT_CLIENT_PROPERTY_ID"][0][ga4_client_name]
-            os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "/Users/macbook/PycharmProjects/ACC_Cross_Sales/Key.json"
-
-            response = interpret_query(ga4_text_for_prompt,property_id)
-            # Пример преобразования строки JSON в Python-объект
-
-            # Форматирование ответа для отображения
-            for row in response.rows:
-                dimension_value = row.dimension_values[0].value if row.dimension_values else None
-                metric_value = row.metric_values[0].value if row.metric_values else None
-                st.write(f"{dimension_value}: {metric_value}")
-        if st.button("Clear Chat"):
-            st.session_state["GA4 CHAT TEXT"] = ""
-
-        st.write(st.session_state["GA4 CHAT TEXT"])
+        # st.title("GA4 Chat")
+        # ga4_client_name = st.selectbox(
+        #     "Choose the company name",
+        #     st.session_state['CLIENTS_LIST']
+        # )
+        # ga4_chat_or_table = st.radio("Select whether you want to create a Chat with GA4 data or create a Table.",["Chat","Table"])
+        # ga4_text_for_prompt = st.text_area(label="Enter a question or task for your GA4 data.",
+        #                                 height=300)
+        # if st.button("Get an Answer"):
+        #     st.session_state["GA4 CHAT TEXT"] += ga4_text_for_prompt
+        #     property_id = st.secrets["GA4_DICT_CLIENT_PROPERTY_ID"][0][ga4_client_name]
+        #     os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "/Users/macbook/PycharmProjects/ACC_Cross_Sales/Key.json"
+        #
+        #     response = interpret_query(ga4_text_for_prompt,property_id)
+        #     # Пример преобразования строки JSON в Python-объект
+        #
+        #     # Форматирование ответа для отображения
+        #     for row in response.rows:
+        #         dimension_value = row.dimension_values[0].value if row.dimension_values else None
+        #         metric_value = row.metric_values[0].value if row.metric_values else None
+        #         st.write(f"{dimension_value}: {metric_value}")
+        # if st.button("Clear Chat"):
+        #     st.session_state["GA4 CHAT TEXT"] = ""
+        #
+        # st.write(st.session_state["GA4 CHAT TEXT"])
 
 
 
