@@ -13,14 +13,18 @@ import base64
 import requests
 from datetime import datetime
 import math
+import altair as alt
 from concurrent.futures import ProcessPoolExecutor, as_completed
 import gspread
 from google.oauth2.service_account import Credentials
 from vis_context_tools import promt_chooser,screenshot_by_url, get_text_content_by_url, llm_analysis_of_image, llm_analysis_of_text
 from get_clickup_info_by_client import get_ab_test_tickets_info_by_client_name, get_list_of_clients_names
 import hmac
+from google.analytics.data_v1beta import BetaAnalyticsDataClient
+from google.analytics.data_v1beta.types import RunReportRequest, Metric, Dimension
+from openai import OpenAI
 
-TOOLS_LIST = ["Main page", "Cross-Sales App", "VisContext Analyzer", "Tool number 3"]
+TOOLS_LIST = ["Main page", "Cross-Sales App", "VisContext Analyzer", "GA4 Chat"]
 DA_NAMES = ["Amar","Djordje","Tarik","Axel","Denis","JDK","other"]
 
 
@@ -54,6 +58,8 @@ if not check_password():
 
 if "CLIENTS_LIST" not in st.session_state.keys() or st.session_state["CLIENTS_LIST"] == None:
     st.session_state['CLIENTS_LIST'] = get_list_of_clients_names()
+if "GA4 CHAT TEXT" not in st.session_state.keys() or st.session_state["GA4 CHAT TEXT"] == None:
+    st.session_state['GA4 CHAT TEXT'] = ""
 def update_contact():
     st.session_state.contact = st.session_state.contact_select
 
@@ -129,6 +135,56 @@ def process_in_parallel(df, chunk_size, product_matrix, full_df):
             progress = (i + 1) / total_chunks
             progress_bar.progress(min(progress, 1.0))
     return pd.concat(results, ignore_index=True)
+
+
+def interpret_query(user_input,property_id):
+    client = OpenAI()
+    client_ga = BetaAnalyticsDataClient()
+    metadata = client_ga.get_metadata(name=f"properties/{property_id}/metadata")
+    metrics = [m.api_name for m in metadata.metrics]
+    dimensions = [d.api_name for d in metadata.dimensions]
+    print(dimensions)
+    print(metrics)
+    system_prompt = (
+        """You are the assistant who interprets any user requests and converts them into JSON parameters for the Google Analytics Data API.
+If the user asks about metrics, dimensions, specify them explicitly.
+Example: 'If he ask give him number of Active users in the last week' -> {'metrics': ['name':'activeUsers'], 'date_ranges': [{'start_date': '7daysAgo', 'end_date': 'today'}]}"""
+f"""Available metrics:
+{metrics}
+Available dimensions:
+{dimensions}
+IMPORTANT! YOUR answer must contain only JSON parameters for the Google Analytics Data API and nothing else!"""
+    )
+    response = client.chat.completions.create(
+        model="gpt-4o",
+        messages=[
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_input},
+        ],
+        temperature=0.2
+    )
+    pattern = r'\{.*\}'
+    text = response.choices[0].message.content
+    print(response.choices[0].message.content)
+    match = re.search(pattern, text, re.DOTALL)
+    if match:
+        extracted = match.group()
+        print("Извлечённая часть:", extracted)
+    else:
+        print("Фигурные скобки не найдены")
+
+    query_params = json.loads(extracted)
+
+    print(query_params)
+    request = RunReportRequest(
+                property=f"properties/{property_id}",
+                metrics=query_params['metrics'],
+                dimensions=query_params.get('dimensions', []),
+                date_ranges=query_params['date_ranges']
+            )
+    print(client_ga.run_report(request))
+    return client_ga.run_report(request)
+
 
 if __name__ == '__main__':
     st.set_page_config(
@@ -208,6 +264,7 @@ if __name__ == '__main__':
 
 
             df_main = pd.read_csv(uploaded_file)
+
             st.write("File uploaded successfully:")
             st.write(df_main.head())
             if len(df_main.columns) < 4:
@@ -232,7 +289,7 @@ if __name__ == '__main__':
 
 
         if st.button("Start processing"):
-
+            st.session_state['cs_df'] = None
             # Проверка, что выбраны корректные параметры
             if radio_quantity_items == "Choose":
                 st.error("Please select the number of items using the radio button")
@@ -287,7 +344,6 @@ if __name__ == '__main__':
             # Create function for counting and summing amount of transactions and AOV contais tuple of products
             product_matrix = full_df['product_name'].str.get_dummies(sep='#')
 
-
             #start_time = time.time()
             cs_df = process_in_parallel(cs_df, chunk_size=100, product_matrix=product_matrix, full_df=full_df)
             #end_time = time.time()
@@ -336,13 +392,17 @@ if __name__ == '__main__':
                 else:
                     cs_df = cs_df
 
-            st.write(cs_df)
             st.success("Processing complete!")
+            st.session_state['cs_df'] = cs_df
+
+
+
+        if type(st.session_state['cs_df']) != None:
+            st.write(st.session_state['cs_df'])
             def convert_df_to_csv(df):
                 return df.to_csv(index=False).encode('utf-8')
 
-
-            csv_data = convert_df_to_csv(cs_df)
+            csv_data = convert_df_to_csv(st.session_state['cs_df'])
 
             st.download_button(
                 label="Download result in CSV",
@@ -350,6 +410,32 @@ if __name__ == '__main__':
                 file_name="cross_sales_results.csv",
                 mime="text/csv"
             )
+            sort_option = st.selectbox(
+                "Sort chart by:",
+                ["Transactions (Descending)", "Transactions (Ascending)", "AOV (Descending)", "AOV (Ascending)"],
+            )
+            if sort_option == "Transactions (Descending)":
+                top_items = st.session_state['cs_df'].sort_values(by="transactions", ascending=False)
+            elif sort_option == "Transactions (Ascending)":
+                top_items = st.session_state['cs_df'].sort_values(by="transactions", ascending=True)
+            elif sort_option == "AOV (Descending)":
+                top_items = st.session_state['cs_df'].sort_values(by="AOV", ascending=False)
+            else:
+                top_items = st.session_state['cs_df'].sort_values(by="AOV", ascending=True)
+
+            num_items = st.slider("Number of combinations to display:", 5,20, 200)
+            top_items = top_items.head(num_items)
+
+            top_items['item_comb'] = top_items['item_comb'].apply(lambda x: ', '.join(x))
+            combined_chart = alt.Chart(top_items).mark_bar().encode(
+                y=alt.Y('item_comb', title='Product Combinations',axis=alt.Axis( labelLimit=150),sort=None),
+                x=alt.X('transactions', title='Number of Transactions'),
+                color=alt.Color('AOV', title='AOV'),
+                tooltip=['item_comb', 'transactions', 'AOV']
+            ).interactive()
+
+
+            st.altair_chart(combined_chart, use_container_width=True)
     with tab3:
 
 
@@ -457,7 +543,7 @@ if __name__ == '__main__':
 
                     fixed_prompt = st.session_state["fixed_prompt"]
                     fixed_result = st.session_state["fixed_result"]
-
+                    
                     os.environ["OPENAI_API_KEY"] = st.secrets['OPENAI_API_KEY']
                     os.environ["OPENAI_ORGANIZATION"] = st.secrets['OPENAI_ORGANIZATION']
                     if analysis_type == "Text Content Analysis":
@@ -478,6 +564,36 @@ if __name__ == '__main__':
                         result_of_llm_analysis = llm_analysis_of_image(screenshot,f"{fixed_prompt}\n\nGive your final answer in the following structure:\n{fixed_result}")
                 st.success("Analysis complete!")
                 st.write(result_of_llm_analysis)
+    with tab4:
+
+        st.title("GA4 Chat")
+        ga4_client_name = st.selectbox(
+            "Choose the company name",
+            st.session_state['CLIENTS_LIST']
+        )
+        ga4_chat_or_table = st.radio("Select whether you want to create a Chat with GA4 data or create a Table.",["Chat","Table"])
+        ga4_text_for_prompt = st.text_area(label="Enter a question or task for your GA4 data.",
+                                        height=300)
+        if st.button("Get an Answer"):
+            st.session_state["GA4 CHAT TEXT"] += ga4_text_for_prompt
+            property_id = st.secrets["GA4_DICT_CLIENT_PROPERTY_ID"][0][ga4_client_name]
+            os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "/Users/macbook/PycharmProjects/ACC_Cross_Sales/Key.json"
+
+            response = interpret_query(ga4_text_for_prompt,property_id)
+            # Пример преобразования строки JSON в Python-объект
+
+            # Форматирование ответа для отображения
+            for row in response.rows:
+                dimension_value = row.dimension_values[0].value if row.dimension_values else None
+                metric_value = row.metric_values[0].value if row.metric_values else None
+                st.write(f"{dimension_value}: {metric_value}")
+        if st.button("Clear Chat"):
+            st.session_state["GA4 CHAT TEXT"] = ""
+
+        st.write(st.session_state["GA4 CHAT TEXT"])
+
+
+
 
 
 
