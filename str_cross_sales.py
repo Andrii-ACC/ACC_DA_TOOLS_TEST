@@ -258,7 +258,7 @@ if __name__ == '__main__':
 
     with tab2:
         print("121221221121212121212",st.session_state.keys())
-        if 'cs_df' not in st.session_state.keys():
+        if 'cs_df' not in list(st.session_state.keys()):
             st.session_state['cs_df'] = None
 
         uploaded_file = st.file_uploader("Upload CSV file", type=["csv"])
