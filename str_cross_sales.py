@@ -557,11 +557,15 @@ if __name__ == '__main__':
 
             client_ga = BetaAnalyticsDataClient()
             try:
+                st.write("3.1")
                 metadata = client_ga.get_metadata(name=f"properties/{property_id}/metadata")
+                st.write("3.2")
                 st.session_state['metrics_list'] = [m.api_name for m in metadata.metrics]
+                st.write("3.3")
                 st.session_state['dimensions_list'] = [d.api_name for d in metadata.dimensions]
                 st.write("3")
             except PermissionDenied as e:
+                st.write("4.1")
                 st.error("The application does not have sufficient permissions for this client property.")
                 st.write("4")
                 st.stop()
