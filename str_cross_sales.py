@@ -535,10 +535,15 @@ if __name__ == '__main__':
         dict_clientname_prop = st.secrets["GA4_DICT_CLIENT_PROPERTY_ID"]
         if "ga4_result_meta_data" not in st.session_state:
             st.session_state["ga4_result_meta_data"] = {}
+        if "metrics_list" not in st.session_state:
+            st.session_state["metrics_list"] = []
+        if "dimensions_list" not in st.session_state:
+            st.session_state["dimensions_list"] = []
         st.title("GA4 Chat")
         ga4_client_name = st.selectbox(
             "Choose the company name",
-            dict_clientname_prop.keys()
+            dict_clientname_prop.keys(),
+
         )
 
         property_id = dict_clientname_prop[ga4_client_name]
