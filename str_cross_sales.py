@@ -525,6 +525,7 @@ if __name__ == '__main__':
                 st.success("Analysis complete!")
                 st.write(result_of_llm_analysis)
     with tab4:
+        pass
         # os.environ["OPENAI_API_KEY"] = st.secrets['OPENAI_API_KEY_GA4_Chat']
         # os.environ["OPENAI_ORGANIZATION"] = st.secrets['OPENAI_ORGANIZATION']
         # # os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "/Users/macbook/PycharmProjects/ACC_Cross_Sales/Key.json"
