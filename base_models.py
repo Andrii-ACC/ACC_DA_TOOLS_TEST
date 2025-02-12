@@ -20,9 +20,9 @@ from pydantic import BaseModel, Field, field_validator, ValidationError, constr,
 
 
 class GA4_Chat_Answer:
-    def __init__(self, ai_model = 'gpt-4o-mini', ga4_property = 281955181):
+    def __init__(self, client_ga, ai_model = 'gpt-4o-mini', ga4_property = 281955181):
         self.ga4_property = ga4_property
-        self.client_ga = BetaAnalyticsDataClient()
+        self.client_ga = client_ga
         self.metadata = self.client_ga.get_metadata(name=f"properties/{self.ga4_property}/metadata")
         self.metrics_list = [m.api_name for m in self.metadata.metrics]
         self.dimensions_list = [d.api_name for d in self.metadata.dimensions]

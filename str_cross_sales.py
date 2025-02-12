@@ -569,7 +569,7 @@ if __name__ == '__main__':
             dimension_multiselect = st.multiselect("Select Dimension", options=st.session_state['dimensions_list'], max_selections=9)
         with col3:
             selected_dates = st.date_input(
-                "Выберите период",
+                "Choose date range",
                 value=(date.today(), date.today()),  # Значения по умолчанию (сегодня)
                 min_value=date(2000, 1, 1),  # Минимальная доступная дата
                 max_value=date.today()  # Максимальная доступная дата (сегодня)
@@ -581,6 +581,7 @@ if __name__ == '__main__':
 
         ga4_text_for_prompt = st.text_area(label="Enter a question or task for your GA4 data.",height=300)
         if st.button("Get an Answer") :
+
             if len(ga4_text_for_prompt)  >= 2:
 
                 property_id = dict_clientname_prop[ga4_client_name]
@@ -599,7 +600,7 @@ if __name__ == '__main__':
 
 
 
-                agent = GA4_Chat_Answer(ai_model = 'gpt-4o-mini',ga4_property=property_id)
+                agent = GA4_Chat_Answer(client_ga, ai_model = 'gpt-4o-mini',ga4_property=property_id )
                 response = agent.answer(ga4_text_for_prompt)
                 st.session_state['ga4_result_table'] = response[0]
                 st.session_state['ga4_result_raw'] = response[1]
@@ -620,7 +621,7 @@ if __name__ == '__main__':
                 st.error("""To correctly check the quality of the generated API request, it is necessary to "Get an answer".""")
                 st.stop()
             st.progress()
-            agent = GA4_Chat_Answer(ai_model='gpt-4o-mini', ga4_property=property_id)
+            agent = GA4_Chat_Answer(client_ga, ai_model='gpt-4o-mini', ga4_property=property_id )
             response_api_check = agent.check_api(st.session_state['ga4_text_for_prompt'], st.session_state['ga4_result_raw'])
             st.session_state['ga4_result_meta_data'] = response_api_check
 
