@@ -28,7 +28,8 @@ TOOLS_LIST = ["Main page", "Cross-Sales App", "VisContext Analyzer", "GA4 Chat"]
 DA_NAMES = ["Amar","Djordje","Tarik","Axel","Denis","JDK","other"]
 
 
-
+def str_crewai_callback(step):
+    st.write(step)
 def check_password():
     """Returns `True` if the user had the correct password."""
 
