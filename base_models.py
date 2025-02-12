@@ -6,12 +6,10 @@ from datetime import datetime
 import pandas as pd
 from crewai import Agent, Task, Crew, Process
 from crewai.tools import BaseTool
-import streamlit as st
 from langchain_openai import ChatOpenAI
 from openai import OpenAI
-from google.analytics.data_v1beta import BetaAnalyticsDataClient
 from google.analytics.data_v1beta.types import RunReportRequest
-from typing import List, Optional, Union, Dict, Literal, Type, Any
+from typing import List, Optional, Dict, Literal, Type, Any
 from pydantic import BaseModel, Field, field_validator, ValidationError, constr, ConfigDict
 
 
@@ -305,7 +303,7 @@ class GA4_Chat_Answer:
                         # Логическое значение
                         comparisons= validated_request.dict().get("comparisons", []),  # Список
                     )
-                    report = BetaAnalyticsDataClient().run_report(request)
+                    report = self.client_ga.run_report(request)
                     dimension_headers = [header.name for header in report.dimension_headers]
                     metric_headers = [header.name for header in report.metric_headers]
                     rows = []
