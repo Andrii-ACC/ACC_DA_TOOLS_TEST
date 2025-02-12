@@ -557,9 +557,11 @@ if __name__ == '__main__':
         if "ga4_client_name" not in st.session_state or ga4_client_name != st.session_state['ga4_client_name']:
             st.write("2.1")
             st.session_state['ga4_client_name'] = ga4_client_name
+            st.write("2.2")
             st.session_state['ga4_result_meta_data'] = {}
-
+            st.write("2.3")
             client_ga = BetaAnalyticsDataClient()
+            st.write("2.4")
             try:
                 st.write("3.1")
                 metadata = client_ga.get_metadata(name=f"properties/{property_id}/metadata")
