@@ -534,7 +534,7 @@ if __name__ == '__main__':
         # os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "/Users/macbook/PycharmProjects/ACC_Cross_Sales/Key.json"
         st.write("1")
 
-        BetaAnalyticsDataClient.from_service_account_info(st.secrets["ACC_GC_KEY"])
+        client_ga = BetaAnalyticsDataClient.from_service_account_info(st.secrets["ACC_GC_KEY"])
 
         dict_clientname_prop = st.secrets["GA4_DICT_CLIENT_PROPERTY_ID"]
         if "ga4_result_meta_data" not in st.session_state:
@@ -560,7 +560,6 @@ if __name__ == '__main__':
             st.write("2.2")
             st.session_state['ga4_result_meta_data'] = {}
             st.write("2.3")
-            client_ga = BetaAnalyticsDataClient()
             st.write("2.4")
             try:
                 st.write("3.1")
