@@ -451,7 +451,7 @@ class GA4_Chat_Answer:
         costs = (2.50 * token_dict['prompt_tokens'] + 10.0 * token_dict['completion_tokens'])/1000000
         print(f"Total costs: ${costs:.4f}")
             # Display the DataFrame
-        return [self.create_df_table(report),result.raw,{key:result.pydantic.dict()[key] for key in ['dimensions','metrics','dimension_filter','metric_filter','limit']}]
+        return [self.create_df_table(report),result.raw,{key:result.pydantic.dict()[key] for key in ['dimensions','metrics','date_ranges','dimension_filter','metric_filter','limit']}]
 
     def check_api(self, user_input,result_raw):
 
