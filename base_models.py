@@ -11,7 +11,7 @@ from openai import OpenAI
 from google.analytics.data_v1beta.types import RunReportRequest
 from typing import List, Optional, Dict, Literal, Type, Any
 from pydantic import BaseModel, Field, field_validator, ValidationError, constr, ConfigDict
-import streamlit as st
+
 
 # Метрика
 
@@ -347,14 +347,11 @@ class GA4_Chat_Answer:
         tasks_config = self.configs['tasks']
         os.environ['OPENAI_MODEL_NAME'] = ai_model
 
-        def str_crewai_callback(step):
-            st.write(step)
 
         self.agent1 = Agent(
             config=agents_config['ga4_api_agent'],
             tools=[],
             memory=True,
-            step_callback = str_crewai_callback
         )
 
         self.task1 = Task(

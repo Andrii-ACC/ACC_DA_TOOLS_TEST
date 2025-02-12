@@ -28,8 +28,7 @@ TOOLS_LIST = ["Main page", "Cross-Sales App", "VisContext Analyzer", "GA4 Chat"]
 DA_NAMES = ["Amar","Djordje","Tarik","Axel","Denis","JDK","other"]
 
 
-def str_crewai_callback(step):
-    st.write(step)
+
 def check_password():
     """Returns `True` if the user had the correct password."""
 
@@ -602,10 +601,11 @@ if __name__ == '__main__':
 
 
                 agent = GA4_Chat_Answer(client_ga, ai_model = 'gpt-4o-mini',ga4_property=property_id )
-                response = agent.answer(ga4_text_for_prompt)
-                st.session_state['ga4_result_table'] = response[0]
-                st.session_state['ga4_result_raw'] = response[1]
-                st.session_state['ga4_result_api'] = response[2]
+                with st.spinner("The AI Agent is in the process of generating a data table..."):
+                    response = agent.answer(ga4_text_for_prompt)
+                    st.session_state['ga4_result_table'] = response[0]
+                    st.session_state['ga4_result_raw'] = response[1]
+                    st.session_state['ga4_result_api'] = response[2]
             elif len(ga4_text_for_prompt)  < 2:
                 st.error("""Prompt can't be so short""")
 
@@ -622,7 +622,8 @@ if __name__ == '__main__':
                 st.error("""To correctly check the quality of the generated API request, it is necessary to "Get an answer".""")
                 st.stop()
             agent = GA4_Chat_Answer(client_ga, ai_model='gpt-4o-mini', ga4_property=property_id )
-            response_api_check = agent.check_api(st.session_state['ga4_text_for_prompt'], st.session_state['ga4_result_raw'])
+            with st.spinner("The AI Agent is in the process of checking API..."):
+                response_api_check = agent.check_api(st.session_state['ga4_text_for_prompt'], st.session_state['ga4_result_raw'])
             st.session_state['ga4_result_meta_data'] = response_api_check
 
         if st.session_state['ga4_result_meta_data'].get('overall_verdict',[]) == "Fully compliant":
