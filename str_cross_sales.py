@@ -527,12 +527,9 @@ if __name__ == '__main__':
                 st.success("Analysis complete!")
                 st.write(result_of_llm_analysis)
     with tab4:
-        st.write("Tab 4 opened!")
 
         os.environ["OPENAI_API_KEY"] = st.secrets['OPENAI_API_KEY_GA4_Chat']
         os.environ["OPENAI_ORGANIZATION"] = st.secrets['OPENAI_ORGANIZATION']
-        # os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "/Users/macbook/PycharmProjects/ACC_Cross_Sales/Key.json"
-        st.write("1")
 
         client_ga = BetaAnalyticsDataClient.from_service_account_info(st.secrets["ACC_GC_KEY"])
 
@@ -549,43 +546,27 @@ if __name__ == '__main__':
             dict_clientname_prop.keys(),
 
         )
-        st.write("2")
         property_id = dict_clientname_prop[ga4_client_name]
-        st.write(f"2 {property_id}")
-        st.write(f"2 {st.session_state}")
 
         if "ga4_client_name" not in st.session_state or ga4_client_name != st.session_state['ga4_client_name']:
-            st.write("2.1")
             st.session_state['ga4_client_name'] = ga4_client_name
-            st.write("2.2")
             st.session_state['ga4_result_meta_data'] = {}
-            st.write("2.3")
-            st.write("2.4")
             try:
-                st.write("3.1")
                 metadata = client_ga.get_metadata(name=f"properties/{property_id}/metadata")
-                st.write("3.2")
                 st.session_state['metrics_list'] = [m.api_name for m in metadata.metrics]
-                st.write("3.3")
                 st.session_state['dimensions_list'] = [d.api_name for d in metadata.dimensions]
-                st.write("3")
             except PermissionDenied as e:
-                st.write("4.1")
                 st.error("The application does not have sufficient permissions for this client property.")
-                st.write("4")
                 st.stop()
             ga4_model = st.radio("Select the GPT model that will be used to process your request.",["gpt-4o-mini","gpt-4o"])
         col1, col2, col3, col4 = st.columns(4)
-        st.write("5")
         # В первой колонке выбираем метрики
         with col1:
             metric_multiselect = st.multiselect("Select Metric", options=st.session_state['metrics_list'],max_selections=10)
-            st.write("6")
 
         # Во второй колонке выбираем измерения
         with col2:
             dimension_multiselect = st.multiselect("Select Dimension", options=st.session_state['dimensions_list'], max_selections=9)
-            st.write("7")
         with col3:
             selected_dates = st.date_input(
                 "Выберите период",
@@ -593,14 +574,12 @@ if __name__ == '__main__':
                 min_value=date(2000, 1, 1),  # Минимальная доступная дата
                 max_value=date.today()  # Максимальная доступная дата (сегодня)
             )
-            st.write("8")
 
 
 
 
 
         ga4_text_for_prompt = st.text_area(label="Enter a question or task for your GA4 data.",height=300)
-        st.write("9")
         if st.button("Get an Answer") :
             if len(ga4_text_for_prompt)  >= 2:
 
