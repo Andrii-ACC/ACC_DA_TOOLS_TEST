@@ -21,8 +21,8 @@ from vis_context_tools import promt_chooser,screenshot_by_url, get_text_content_
 from get_clickup_info_by_client import get_ab_test_tickets_info_by_client_name, get_list_of_clients_names
 import hmac
 from google.analytics.data_v1beta import BetaAnalyticsDataClient
-from google.analytics.data_v1beta.types import RunReportRequest, Metric, Dimension
-from openai import OpenAI
+from google.api_core.exceptions import PermissionDenied
+from base_models import GA4_Chat_Answer
 
 TOOLS_LIST = ["Main page", "Cross-Sales App", "VisContext Analyzer", "GA4 Chat"]
 DA_NAMES = ["Amar","Djordje","Tarik","Axel","Denis","JDK","other"]
@@ -60,6 +60,10 @@ if "CLIENTS_LIST" not in st.session_state.keys() or st.session_state["CLIENTS_LI
     st.session_state['CLIENTS_LIST'] = get_list_of_clients_names()
 if "GA4 CHAT TEXT" not in st.session_state.keys() or st.session_state["GA4 CHAT TEXT"] == None:
     st.session_state['GA4 CHAT TEXT'] = ""
+if "ga4_result_meta_data" not in st.session_state:
+    st.session_state["ga4_result_meta_data"] = {}
+if "ga4_result_table" not in st.session_state:
+    st.session_state["ga4_result_table"] = {}
 def update_contact():
     st.session_state.contact = st.session_state.contact_select
 
@@ -137,54 +141,6 @@ def process_in_parallel(df, chunk_size, product_matrix, full_df):
     return pd.concat(results, ignore_index=True)
 
 
-def interpret_query(user_input,property_id):
-    client = OpenAI()
-    client_ga = BetaAnalyticsDataClient()
-    metadata = client_ga.get_metadata(name=f"properties/{property_id}/metadata")
-    metrics = [m.api_name for m in metadata.metrics]
-    dimensions = [d.api_name for d in metadata.dimensions]
-    print(dimensions)
-    print(metrics)
-    system_prompt = (
-        """You are the assistant who interprets any user requests and converts them into JSON parameters for the Google Analytics Data API.
-If the user asks about metrics, dimensions, specify them explicitly.
-Example: 'If he ask give him number of Active users in the last week' -> {'metrics': ['name':'activeUsers'], 'date_ranges': [{'start_date': '7daysAgo', 'end_date': 'today'}]}"""
-f"""Available metrics:
-{metrics}
-Available dimensions:
-{dimensions}
-IMPORTANT! YOUR answer must contain only JSON parameters for the Google Analytics Data API and nothing else!"""
-    )
-    response = client.chat.completions.create(
-        model="gpt-4o",
-        messages=[
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": user_input},
-        ],
-        temperature=0.2
-    )
-    pattern = r'\{.*\}'
-    text = response.choices[0].message.content
-    print(response.choices[0].message.content)
-    match = re.search(pattern, text, re.DOTALL)
-    if match:
-        extracted = match.group()
-        print("Извлечённая часть:", extracted)
-    else:
-        print("Фигурные скобки не найдены")
-
-    query_params = json.loads(extracted)
-
-    print(query_params)
-    request = RunReportRequest(
-                property=f"properties/{property_id}",
-                metrics=query_params['metrics'],
-                dimensions=query_params.get('dimensions', []),
-                date_ranges=query_params['date_ranges']
-            )
-    print(client_ga.run_report(request))
-    return client_ga.run_report(request)
-
 
 if __name__ == '__main__':
     st.set_page_config(
@@ -259,8 +215,7 @@ if __name__ == '__main__':
     with tab2:
         if 'cs_df' not in st.session_state:
             st.session_state['cs_df'] = None
-        else:
-            print(st.session_state)
+
 
         uploaded_file = st.file_uploader("Upload CSV file", type=["csv"])
 
@@ -549,7 +504,7 @@ if __name__ == '__main__':
                     fixed_prompt = st.session_state["fixed_prompt"]
                     fixed_result = st.session_state["fixed_result"]
                     
-                    os.environ["OPENAI_API_KEY"] = st.secrets['OPENAI_API_KEY']
+                    os.environ["OPENAI_API_KEY"] = st.secrets['OPENAI_API_KEY_Vizcontext_Tool']
                     os.environ["OPENAI_ORGANIZATION"] = st.secrets['OPENAI_ORGANIZATION']
                     if analysis_type == "Text Content Analysis":
                         text_content = get_text_content_by_url(url_of_text_content)
@@ -570,33 +525,116 @@ if __name__ == '__main__':
                 st.success("Analysis complete!")
                 st.write(result_of_llm_analysis)
     with tab4:
-        st.title("COMING SOON CHAT WITH GA4 DATA")
+        os.environ["OPENAI_API_KEY"] = st.secrets['OPENAI_API_KEY_GA4_Chat']
+        os.environ["OPENAI_ORGANIZATION"] = st.secrets['OPENAI_ORGANIZATION']
+        # os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "/Users/macbook/PycharmProjects/ACC_Cross_Sales/Key.json"
 
-        # st.title("GA4 Chat")
-        # ga4_client_name = st.selectbox(
-        #     "Choose the company name",
-        #     st.session_state['CLIENTS_LIST']
-        # )
-        # ga4_chat_or_table = st.radio("Select whether you want to create a Chat with GA4 data or create a Table.",["Chat","Table"])
-        # ga4_text_for_prompt = st.text_area(label="Enter a question or task for your GA4 data.",
-        #                                 height=300)
-        # if st.button("Get an Answer"):
-        #     st.session_state["GA4 CHAT TEXT"] += ga4_text_for_prompt
-        #     property_id = st.secrets["GA4_DICT_CLIENT_PROPERTY_ID"][0][ga4_client_name]
-        #     os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "/Users/macbook/PycharmProjects/ACC_Cross_Sales/Key.json"
-        #
-        #     response = interpret_query(ga4_text_for_prompt,property_id)
-        #     # Пример преобразования строки JSON в Python-объект
-        #
-        #     # Форматирование ответа для отображения
-        #     for row in response.rows:
-        #         dimension_value = row.dimension_values[0].value if row.dimension_values else None
-        #         metric_value = row.metric_values[0].value if row.metric_values else None
-        #         st.write(f"{dimension_value}: {metric_value}")
-        # if st.button("Clear Chat"):
-        #     st.session_state["GA4 CHAT TEXT"] = ""
-        #
-        # st.write(st.session_state["GA4 CHAT TEXT"])
+
+        BetaAnalyticsDataClient.from_service_account_info(st.secrets["ACC_GC_KEY"])
+
+        dict_clientname_prop = st.secrets["GA4_DICT_CLIENT_PROPERTY_ID"]
+        if "ga4_result_meta_data" not in st.session_state:
+            st.session_state["ga4_result_meta_data"] = {}
+        st.title("GA4 Chat")
+        ga4_client_name = st.selectbox(
+            "Choose the company name",
+            dict_clientname_prop.keys()
+        )
+
+        property_id = dict_clientname_prop[ga4_client_name]
+        if "ga4_client_name" not in st.session_state or ga4_client_name != st.session_state['ga4_client_name']:
+            st.session_state['ga4_client_name'] = ga4_client_name
+            st.session_state['ga4_result_meta_data'] = {}
+
+            client_ga = BetaAnalyticsDataClient()
+            try:
+                metadata = client_ga.get_metadata(name=f"properties/{property_id}/metadata")
+                st.session_state['metrics_list'] = [m.api_name for m in metadata.metrics]
+                st.session_state['dimensions_list'] = [d.api_name for d in metadata.dimensions]
+            except PermissionDenied as e:
+                st.error("The application does not have sufficient permissions for this client property.")
+                st.stop()
+            ga4_model = st.radio("Select the GPT model that will be used to process your request.",["gpt-4o-mini","gpt-4o"])
+        col1, col2, col3, col4 = st.columns(4)
+
+        # В первой колонке выбираем метрики
+        with col1:
+            metric_multiselect = st.multiselect("Select Metric", options=st.session_state['metrics_list'],max_selections=10)
+
+
+        # Во второй колонке выбираем измерения
+        with col2:
+            dimension_multiselect = st.multiselect("Select Dimension", options=st.session_state['dimensions_list'], max_selections=9)
+        with col3:
+            selected_dates = st.date_input(
+                "Выберите период",
+                value=(date.today(), date.today()),  # Значения по умолчанию (сегодня)
+                min_value=date(2000, 1, 1),  # Минимальная доступная дата
+                max_value=date.today()  # Максимальная доступная дата (сегодня)
+            )
+
+
+
+
+
+        ga4_text_for_prompt = st.text_area(label="Enter a question or task for your GA4 data.",height=300)
+
+        if st.button("Get an Answer") :
+            if len(ga4_text_for_prompt)  >= 2:
+
+                property_id = dict_clientname_prop[ga4_client_name]
+
+                st.session_state['ga4_text_for_prompt'] = ga4_text_for_prompt
+                if isinstance(selected_dates, tuple) and len(selected_dates) == 2:
+                    start_date, end_date = selected_dates
+                    ga4_text_for_prompt = f"{ga4_text_for_prompt}\nTake data from {start_date.strftime('%Y-%m-%d')} to {end_date.strftime('%Y-%m-%d')}.\n"
+
+                if len(metric_multiselect)> 0 and len(dimension_multiselect) > 0:
+                    ga4_text_for_prompt = f"{ga4_text_for_prompt}\nAdditionally, try to include these Metrics: \n{metric_multiselect}\n and These Dimensions \n{dimension_multiselect}\n in your request."
+                elif len(metric_multiselect)>0:
+                    ga4_text_for_prompt = f"{ga4_text_for_prompt}\nAdditionally, try to include these Metrics: \n{metric_multiselect} in your request."
+                elif len(dimension_multiselect) > 0:
+                    ga4_text_for_prompt = f"{ga4_text_for_prompt}\nAdditionally, try to include these Dimensions: \n{dimension_multiselect} in your request."
+
+
+
+                agent = GA4_Chat_Answer(ai_model = 'gpt-4o-mini',ga4_property=property_id)
+                response = agent.answer(ga4_text_for_prompt)
+                st.session_state['ga4_result_table'] = response[0]
+                st.session_state['ga4_result_raw'] = response[1]
+                st.session_state['ga4_result_api'] = response[2]
+            elif len(ga4_text_for_prompt)  < 2:
+                st.error("""Prompt can't be so short""")
+
+
+
+        if 'ga4_result_api' in st.session_state:
+            st.write(st.session_state['ga4_result_table'])
+            with st.expander("Show main API parameters"):
+                st.json(st.session_state['ga4_result_api'])
+
+        if st.button("Check API"):
+            property_id = dict_clientname_prop[ga4_client_name]
+            if 'ga4_result_raw' not in st.session_state:
+                st.error("""To correctly check the quality of the generated API request, it is necessary to "Get an answer".""")
+                st.stop()
+            st.progress()
+            agent = GA4_Chat_Answer(ai_model='gpt-4o-mini', ga4_property=property_id)
+            response_api_check = agent.check_api(st.session_state['ga4_text_for_prompt'], st.session_state['ga4_result_raw'])
+            st.session_state['ga4_result_meta_data'] = response_api_check
+
+        if st.session_state['ga4_result_meta_data'].get('overall_verdict',[]) == "Fully compliant":
+            st.success("Fully compliant")
+            st.write(f"Note: {st.session_state['ga4_result_meta_data']['note']}")
+        elif st.session_state['ga4_result_meta_data'].get('overall_verdict',[]) == "Some differences":
+            st.warning("Some differences")
+            st.write(f"Differences: {st.session_state['ga4_result_meta_data']['differences']}")
+            st.write(f"Note: {st.session_state['ga4_result_meta_data']['note']}")
+        elif st.session_state['ga4_result_meta_data'].get('overall_verdict',[]) == "Total mismatch":
+            st.error("Total mismatch")
+            st.write(f"Differences: {st.session_state['ga4_result_meta_data']['differences']}")
+            st.write(f"Note: {st.session_state['ga4_result_meta_data']['note']}")
+
 
 
 

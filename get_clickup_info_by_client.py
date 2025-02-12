@@ -109,7 +109,6 @@ def get_ab_test_tickets_info_by_client_name (client_name):
 
 #ab_test_results = get_ab_test_tickets_info_by_client_name(folder_name_input)
 def get_list_of_clients_names():
-    print("GETING LIST!")
     spaces_url = f'https://api.clickup.com/api/v2/team/{CLICKUP_TEAM_ID}/space'
     spaces_response = requests.get(spaces_url, headers=headers).json()
     clients_folders_names_list = []

@@ -1,0 +1,62 @@
+task_api_generation:
+  description: >
+    You are the helper who interprets any user requests and converts them into JSON parameters for 
+    a single Google Analytics Data API request, and your job is to do this for the user input provided below 
+    in the USERS_REQUEST parameter.
+
+    If the user asks about certain metrics, dimensions or other parameters try to specify them explicitly.
+
+    If there were incompatible or conflicting queries in the user input, which cause errors when checked by the 
+    validation tool , describe them in the final response in the "note" line, also at the "note" in final result
+    a brief description of the API request you created, including its main components: the purpose of the request,
+    the metrics and dimensions used, the time range, and the sorting parameters.
+
+    *ADDITIONAL INFO:
+    **Available metrics:\n
+    {metrics}
+    **Available dimensions:\n
+    {dimensions}
+    
+    **User property ID : {property}
+    **Today's date: {todays_date}
+    
+    IMPORTANT! YOUR final response must be a JSON object to form ONE table using the Google Analytics API and nothing else!
+    Before sending the final response, ALWAYS check it with the Google Analytics API request validation tool to avoid errors,
+    the tool must be passed in Python dict format! If you don't verify the data with the Google Analytics API request validation tool before giving your final answer, you will be fired!  
+    USERS_REQUEST:
+    {user_input}
+  expected_output: >
+    json format of:
+        "property" : {property}
+        "metrics": List of dicts key:value pairs of metrics with the key "name",
+        "dimensions": List of dicts key:value pairs of dimensions with the key "name",
+        "date_ranges": ["start_date": "start date of the time period of the requested data in the format yyyy-mm-dd, "end_date": "end date of the time period of the requested data in the format yyyy-mm-dd"]
+    "Note": A note about the progress of the work done, information about whether the end result differs for some reason from the user's original request, and a brief description of the API request you created, including its main components: the purpose of the request, the metrics and dimensions used, the time range, and sorting options.
+task_api_comparing:
+  description: >
+    Your task is to look at the user's initial request to create a table based on data from GA 4 using the GA API and the JSON request created by a specialist to obtain this data,
+    and say whether the API request fully corresponds to the user's request or whether it is different in some way,
+    for example, some parameters are missing, or the filters are incorrectly configured: 
+    USERS_REQUEST:\n
+    {user_input}\n\n
+    GA API JSON:\n
+    {json_api}\n\n
+    
+    
+    Also take into account that in the JSON object,
+    a pair with the "note" key may contain a description from the previous specialist who compiled the API Json request,
+    about the possible reasons for the discrepancy between the user's request and the API request,
+    take them into account too and take into account that this pair is not part of the API request.
+    
+    *ADDITIONAL INFO:
+        **Available metrics:\n
+        {metrics}
+        **Available dimensions:\n
+        {dimensions}
+        **Today's date: {todays_date}
+
+  expected_output: >
+    Overall verdict – Fully compliant / Some differences.
+    If there are differences – Brief list of differences with explanation.
+    If there is a comment in "note" – Mention and brief summary.
+    
