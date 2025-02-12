@@ -620,7 +620,6 @@ if __name__ == '__main__':
             if 'ga4_result_raw' not in st.session_state:
                 st.error("""To correctly check the quality of the generated API request, it is necessary to "Get an answer".""")
                 st.stop()
-            st.progress()
             agent = GA4_Chat_Answer(client_ga, ai_model='gpt-4o-mini', ga4_property=property_id )
             response_api_check = agent.check_api(st.session_state['ga4_text_for_prompt'], st.session_state['ga4_result_raw'])
             st.session_state['ga4_result_meta_data'] = response_api_check
