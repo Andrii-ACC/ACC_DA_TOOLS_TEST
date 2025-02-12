@@ -551,7 +551,12 @@ if __name__ == '__main__':
         )
         st.write("2")
         property_id = dict_clientname_prop[ga4_client_name]
+        st.write(f"2 {property_id}")
+        st.write(f"2 {st.session_state['ga4_client_name']}")
+        st.write(f"2 {st.session_state}")
+
         if "ga4_client_name" not in st.session_state or ga4_client_name != st.session_state['ga4_client_name']:
+            st.write("2.1")
             st.session_state['ga4_client_name'] = ga4_client_name
             st.session_state['ga4_result_meta_data'] = {}
 
