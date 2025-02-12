@@ -558,7 +558,7 @@ if __name__ == '__main__':
             except PermissionDenied as e:
                 st.error("The application does not have sufficient permissions for this client property.")
                 st.stop()
-            ga4_model = st.radio("Select the GPT model that will be used to process your request.",["gpt-4o-mini","gpt-4o"])
+        ga4_model = st.radio("Select the GPT model that will be used to process your request.",["gpt-4o-mini","gpt-4o"])
         col1, col2, col3, col4 = st.columns(4)
         # В первой колонке выбираем метрики
         with col1:
@@ -586,7 +586,7 @@ if __name__ == '__main__':
 
                 property_id = dict_clientname_prop[ga4_client_name]
 
-                st.session_state['ga4_text_for_prompt'] = ga4_text_for_prompt
+
                 if isinstance(selected_dates, tuple) and len(selected_dates) == 2:
                     start_date, end_date = selected_dates
                     ga4_text_for_prompt = f"{ga4_text_for_prompt}\nTake data from {start_date.strftime('%Y-%m-%d')} to {end_date.strftime('%Y-%m-%d')}.\n"
@@ -597,7 +597,7 @@ if __name__ == '__main__':
                     ga4_text_for_prompt = f"{ga4_text_for_prompt}\nAdditionally, try to include these Metrics: \n{metric_multiselect} in your request."
                 elif len(dimension_multiselect) > 0:
                     ga4_text_for_prompt = f"{ga4_text_for_prompt}\nAdditionally, try to include these Dimensions: \n{dimension_multiselect} in your request."
-
+                st.session_state['ga4_text_for_prompt'] = ga4_text_for_prompt
 
 
                 agent = GA4_Chat_Answer(client_ga, ai_model = 'gpt-4o-mini',ga4_property=property_id )
