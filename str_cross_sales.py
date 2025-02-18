@@ -23,6 +23,8 @@ import hmac
 from google.analytics.data_v1beta import BetaAnalyticsDataClient
 from google.api_core.exceptions import PermissionDenied
 from base_models import GA4_Chat_Answer
+import time
+from itertools import combinations
 
 TOOLS_LIST = ["Main page", "Cross-Sales App", "VisContext Analyzer", "GA4 Chat"]
 DA_NAMES = ["Amar","Djordje","Tarik","Axel","Denis","JDK","other"]
@@ -226,7 +228,6 @@ if __name__ == '__main__':
 
 
             df_main = pd.read_csv(uploaded_file)
-
             st.write("File uploaded successfully:")
             st.write(df_main.head())
             if len(df_main.columns) < 4:
@@ -257,11 +258,10 @@ if __name__ == '__main__':
                 st.error("Please select the number of items using the radio button")
             elif not uploaded_file:
                 st.error("Please upload the CSV file.")
-            else:
-                # Начинаем обработку только если всё заполнено
-                st.success("Processing started...")
-            progress_bar = st.progress(0)
-            progress_text = st.empty()
+            # Начинаем обработку только если всё заполнено
+
+            # progress_bar = st.progress(0) old
+            # progress_text = st.empty() old
 
 
             if re_pattern !=None:
@@ -278,50 +278,89 @@ if __name__ == '__main__':
                     df_main.groupby('product_name')['product_quantity'].sum() >= radio_item_quantity_filter
                     ].index
                 df_main = df_main[df_main['product_name'].isin(valid_product_names)]
+            print(len(df_main))
 
 
 
 
 
-            # Create df transaction_id|product_name
-            item_df = df_main.groupby(['transaction_id'])['product_name'].apply('#'.join).reset_index()
 
-            # Create df transaction_id|quantity|total_revenue
-            int_df = df_main.groupby(['transaction_id'])[['product_quantity', 'total_revenue']].sum().reset_index()
+            # OLD
+            # # Create df transaction_id|product_name
+            # item_df = df_main.groupby(['transaction_id'])['product_name'].apply('#'.join).reset_index()
+            #
+            # # Create df transaction_id|quantity|total_revenue
+            # int_df = df_main.groupby(['transaction_id'])[['product_quantity', 'total_revenue']].sum().reset_index()
+            #
+            # # Add to int_df column of quantity uniques items
+            # item_df['quantity_uniques'] = item_df['product_name'].str.count("#") + 1
+            #
+            # # Concenate to dataframes to get full values
+            # full_df = pd.merge(item_df, int_df, on="transaction_id")
+            #
+            # # Create Series of names of uniques items
+            # products = pd.Series(df_main['product_name'].unique())
+            #
+            # # Create finall dataframe
+            # cs_df = pd.DataFrame({"item_comb": list(combinations(products, radio_quantity_items)), 'transactions': 0, 'AOV' : 0})
 
-            # Add to int_df column of quantity uniques items
-            item_df['quantity_uniques'] = item_df['product_name'].str.count("#") + 1
-
-            # Concenate to dataframes to get full values
-            full_df = pd.merge(item_df, int_df, on="transaction_id")
-
-            # Create Series of names of uniques items
-            products = pd.Series(df_main['product_name'].unique())
-
-            # Create finall dataframe
-            cs_df = pd.DataFrame({"item_comb": list(combinations(products, radio_quantity_items)), 'transactions': 0, 'AOV' : 0})
 
 
-            current_progress_value = 0.0
             # Create function for counting and summing amount of transactions and AOV contais tuple of products
-            product_matrix = full_df['product_name'].str.get_dummies(sep='#')
+            # product_matrix = full_df['product_name'].str.get_dummies(sep='#')
+            #
+            # #start_time = time.time()
+            # cs_df = process_in_parallel(cs_df, chunk_size=100, product_matrix=product_matrix, full_df=full_df)
+            # ________________________
+            # OLD
+            agg_df = df_main.groupby('transaction_id').agg({
+                'product_name': lambda x: '#'.join(x),
+                'product_quantity': 'sum',
+                'total_revenue': 'sum'
+            }).reset_index()
 
-            #start_time = time.time()
-            cs_df = process_in_parallel(cs_df, chunk_size=100, product_matrix=product_matrix, full_df=full_df)
-            #end_time = time.time()
-            #execution_time = end_time - start_time
-            #print(f"Время выполнения старой функции: {execution_time:.2f} секунд")
-
-
-            # Apply to all lines in cs_df count_cross_sells function and fill 'transactions' column init
+            agg_df['quantity_uniques'] = agg_df['product_name'].str.count("#") + 1
 
 
 
+            def get_combinations(products, size):
+                return list(combinations(sorted(products.split('#')), size))
+
+
+            col1, col2, col3 = st.columns(3)
+            with col1:
+                with st.spinner("Processing started! Creating a list of items combinations for each transaction..."):
+
+                    start_time = time.time()
+                    agg_df['item_comb'] = agg_df['product_name'].swifter.apply(lambda x: get_combinations(x, radio_quantity_items))
+                    end_time = time.time()
+                    execution_time = end_time - start_time
+                st.success(f'Creating a list of items combinations for each transaction Completed successfully! The process took: {round(execution_time,3)} seconds')
+
+            with col2:
+                with st.spinner("Exploding of combination lists..."):
+                    start_time = time.time()
+                    agg_df = agg_df.explode('item_comb')
+                    end_time = time.time()
+                    execution_time = end_time - start_time
+                st.success(f'Exploding of combination lists was successful!The process took: {round(execution_time,3)} seconds')
+            with col3:
+                with st.spinner("Forming the final table..."):
+                    start_time = time.time()
+                    cs_df = agg_df.groupby('item_comb').agg(
+                        transactions=('transaction_id', 'count'),
+                        AOV=('total_revenue', 'mean')
+                    ).reset_index()
+                    end_time = time.time()
+                    execution_time = end_time - start_time
+                st.success(f'The final table was formed successfully! The process took: {round(execution_time,3)} seconds')
+
+            # ________________________
+            
             # Remove lones with 0 value
             cs_df = cs_df[cs_df['transactions'] != 0]
 
             # Calculate real AOV
-            cs_df['AOV'] = cs_df['AOV'] / cs_df['transactions']
 
             # Clean data to good view
             cs_df['transactions'] = cs_df['transactions'].astype(int)
