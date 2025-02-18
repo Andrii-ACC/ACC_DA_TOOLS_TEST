@@ -25,6 +25,7 @@ from google.api_core.exceptions import PermissionDenied
 from base_models import GA4_Chat_Answer
 import time
 from itertools import combinations
+import swifter
 
 TOOLS_LIST = ["Main page", "Cross-Sales App", "VisContext Analyzer", "GA4 Chat"]
 DA_NAMES = ["Amar","Djordje","Tarik","Axel","Denis","JDK","other"]
