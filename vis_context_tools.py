@@ -200,15 +200,6 @@ def promt_chooser (analysis_type,result_type,company_name,target_audience,curren
     - The expected outcome of the test (e.g., increased click-through rate, reduced bounce rate)
     
     TEXT CONTENT ON THE {page_type} OF {company_name}:\n
-    {text_content}"""
-            elif result_type == "Hypothesis Formation for A/B Testing":
-                prompt = f"""Today is {current_date}. Analyze the text content on the {page_type} of {company_name} online store in the {industry_type}(selling {product_type}) for {target_audience} , and generate 3-5 hypotheses for A/B testing that could increase conversions. Each hypothesis should include:
-    
-    - The specific text element to test (e.g., CTA wording, product description phrasing)
-    - A rationale explaining why this change may improve user engagement or conversions for this audience
-    - The expected outcome of the test (e.g., increased click-through rate, reduced bounce rate)
-    
-    TEXT CONTENT ON THE {page_type} OF {company_name}:\n
     {text_content}
     """
                 expected_output = f"""Hypothesis Formation for A/B Testing:
