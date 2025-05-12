@@ -670,7 +670,18 @@ if __name__ == '__main__':
 
         if 'ga4_result_api' in st.session_state:
             if create_timeline_graph_check and 'date' in st.session_state['ga4_result_table'].columns:
-                st.dataframe(st.session_state['ga4_result_table'].loc[:, st.session_state['ga4_result_table'].columns != 'date'])
+                print(st.session_state['ga4_result_api'])
+                if len(st.session_state['ga4_result_api']['dimensions'])>0:
+                    df = st.session_state['ga4_result_table'].loc[:, st.session_state['ga4_result_table'].columns != 'date']
+                    summary = (
+                        df.groupby([dim['name'] for dim in st.session_state['ga4_result_api']['dimensions'] if dim['name'] != 'date'], as_index=False)[[metr['name'] for metr in st.session_state['ga4_result_api']['metrics']]]
+                        .sum()
+                        .reset_index(drop=True)
+                    )
+                else:
+                    # Без измерений — просто одна строка со всеми метриками
+                    summary = pd.DataFrame([st.session_state['ga4_result_table'][[metr['name'] for metr in st.session_state['ga4_result_api']['metrics']]].sum().to_dict()])
+                st.dataframe(summary.sort_values(by=[[metr['name'] for metr in st.session_state['ga4_result_api']['metrics']]][0],ascending=False))
 
             elif create_timeline_graph_check and st.session_state['ga4_result_table'].index.name == 'date':
                 df = st.session_state['ga4_result_table'].reset_index()
