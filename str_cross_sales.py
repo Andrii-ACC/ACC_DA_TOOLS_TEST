@@ -1,6 +1,6 @@
-__import__('pysqlite3')
+# __import__('pysqlite3')
 import sys
-sys.modules['sqlite3'] = sys.modules.pop('pysqlite3')
+# sys.modules['sqlite3'] = sys.modules.pop('pysqlite3')
 import pandas as pd
 from itertools import combinations
 import streamlit as st
@@ -730,6 +730,8 @@ if __name__ == '__main__':
                 aggfunc='sum'
             )
             ts['Total'] = ts.sum(axis=1)
+            if ts['Total'].dtype == 'float64':
+                ts['Total'] = ts['Total']
 
 
 
@@ -759,7 +761,7 @@ if __name__ == '__main__':
 
             total_row =  summary.loc[summary[dimension_for_chart] == 'Total'].iloc[0].to_dict()
 
-            other_rows = summary[summary[dimension_for_chart] != 'Total']
+            other_rows = summary[summary[dimension_for_chart] != 'Total'].sort_values(by=[metric_for_chart + '_total'], ascending =False)
             with col3:
                 q = st.text_input("Search table:")
 

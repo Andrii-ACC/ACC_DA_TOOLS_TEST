@@ -232,7 +232,7 @@ class GA4_Chat_Answer:
                                                  Supports multiple ranges for comparison (e.g., current period vs. previous period).''')
             dimension_filter: Optional[FilterExpression] = Field(None,
                                                                  description="""A filter to include or exclude specific dimension values. 
-                                                                 For example, filtering by country or device type.""")
+                                                                 For example, filtering by country or device type. For exclude traffic""")
 
             metric_filter: Optional[FilterExpression] =  Field(None,
                                                                description="""A filter to include or exclude specific metric values. 
