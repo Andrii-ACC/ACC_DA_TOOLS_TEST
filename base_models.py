@@ -10,7 +10,7 @@ from langchain_openai import ChatOpenAI
 from openai import OpenAI
 from google.analytics.data_v1beta.types import RunReportRequest
 from typing import List, Optional, Dict, Literal, Type, Any
-from pydantic import BaseModel, Field, field_validator, ValidationError, constr, ConfigDict
+from pydantic import BaseModel, Field, field_validator, ValidationError, constr, ConfigDict, PrivateAttr
 
 
 # Метрика
@@ -270,12 +270,20 @@ class GA4_Chat_Answer:
 
 
         class ValidateJsonApiTool(BaseTool):
+
             name : str = "Google Analytics API request validation tool"
             description: str = ('''This tool is necessary for validating the query data in Google Analytics API, comparing metrics, measurements and other parameters,
                                 checking their compatibility and also checking the overall correctness of the JSON query.The format of the validation data in this tool must be GA API JSON, not string.
                                 IMPORTANT! Please note that the data passed to the tool must be a valid Python dictionary of keys and values.''')
 
             args_schema : Type[BaseModel] = GA4Request
+            _client_ga: Any = PrivateAttr()
+
+            def __init__(self, client_ga, **kwargs):
+                # Сначала инициализируем базу (устанавливаются name, description и т.д.)
+                super().__init__(**kwargs)
+                # А потом присваиваем приватный атрибут
+                self._client_ga = client_ga
             def _run( self, **query) -> Any:
 
                 try:
@@ -303,7 +311,7 @@ class GA4_Chat_Answer:
                         # Логическое значение
                         comparisons= validated_request.dict().get("comparisons", []),  # Список
                     )
-                    report = self.client_ga.run_report(request)
+                    report = self._client_ga.run_report(request)
                     dimension_headers = [header.name for header in report.dimension_headers]
                     metric_headers = [header.name for header in report.metric_headers]
                     rows = []
@@ -358,7 +366,7 @@ class GA4_Chat_Answer:
             config=tasks_config['task_api_generation'],
             agent=self.agent1,
             output_pydantic=GA4Request,
-            tools=[ValidateJsonApiTool()],
+            tools=[ValidateJsonApiTool(client_ga=self.client_ga)],
 
         )
         self.task2 = Task(

@@ -26,6 +26,7 @@ from base_models import GA4_Chat_Answer
 import time
 from itertools import combinations
 import swifter
+from st_aggrid import AgGrid, GridOptionsBuilder, GridUpdateMode, JsCode
 
 TOOLS_LIST = ["Main page", "Cross-Sales App", "VisContext Analyzer", "GA4 Chat"]
 DA_NAMES = ["Amar","Djordje","Tarik","Axel","Denis","JDK","other"]
@@ -66,7 +67,7 @@ if "GA4 CHAT TEXT" not in st.session_state.keys() or st.session_state["GA4 CHAT 
 if "ga4_result_meta_data" not in st.session_state:
     st.session_state["ga4_result_meta_data"] = {}
 if "ga4_result_table" not in st.session_state:
-    st.session_state["ga4_result_table"] = {}
+    st.session_state["ga4_result_table"] = pd.DataFrame()
 def update_contact():
     st.session_state.contact = st.session_state.contact_select
 
@@ -620,6 +621,8 @@ if __name__ == '__main__':
 
 
         ga4_text_for_prompt = st.text_area(label="Enter a question or task for your GA4 data.",height=300)
+        create_timeline_graph_check = st.checkbox("Do you want to plot a line chart on a timeline for this data? Warning! The Date dimension will be forcibly included, avoid metrics and dimensions that are incompatible with this dimension.")
+        print(create_timeline_graph_check)
         if st.button("Get an Answer") :
 
             if len(ga4_text_for_prompt)  >= 2:
@@ -637,22 +640,42 @@ if __name__ == '__main__':
                     ga4_text_for_prompt = f"{ga4_text_for_prompt}\nAdditionally, try to include these Metrics: \n{metric_multiselect} in your request."
                 elif len(dimension_multiselect) > 0:
                     ga4_text_for_prompt = f"{ga4_text_for_prompt}\nAdditionally, try to include these Dimensions: \n{dimension_multiselect} in your request."
+
+                if create_timeline_graph_check:
+                    ga4_text_for_prompt = f"{ga4_text_for_prompt}\nAlso, be sure to break down the data by the Date dimension!"
                 st.session_state['ga4_text_for_prompt'] = ga4_text_for_prompt
 
 
                 agent = GA4_Chat_Answer(client_ga, ai_model = 'gpt-4o-mini',ga4_property=property_id )
                 with st.spinner("The AI Agent is in the process of generating a data table..."):
                     response = agent.answer(ga4_text_for_prompt)
-                    st.session_state['ga4_result_table'] = response[0]
+
                     st.session_state['ga4_result_raw'] = response[1]
                     st.session_state['ga4_result_api'] = response[2]
+                    for col in response[2]['metrics']:
+                        col = col['name']
+                        response[0][col] = (
+                            pd.to_numeric(response[0][col], errors='coerce')
+                            .fillna(0)
+                        )
+                    for col_names in response[0]:
+                        if response[0][col_names].dtype == 'float64':
+                            response[0][col_names] = response[0][col_names].round(2)
+                    st.session_state['ga4_result_table'] = response[0]
+
             elif len(ga4_text_for_prompt)  < 2:
                 st.error("""Prompt can't be so short""")
 
 
-
         if 'ga4_result_api' in st.session_state:
-            st.write(st.session_state['ga4_result_table'])
+            if create_timeline_graph_check and 'date' in st.session_state['ga4_result_table'].columns:
+                st.write(st.session_state['ga4_result_table'].loc[:, st.session_state['ga4_result_table'].columns != 'date'])
+            elif create_timeline_graph_check and st.session_state['ga4_result_table'].index.name == 'date':
+                df = st.session_state['ga4_result_table'].reset_index()
+                st.write(df.loc[:, df.columns != 'date'])
+            else:
+                st.write(st.session_state['ga4_result_table'])
+
             with st.expander("Show main API parameters"):
                 st.json(st.session_state['ga4_result_api'])
 
@@ -677,6 +700,165 @@ if __name__ == '__main__':
             st.error("Total mismatch")
             st.write(f"Differences: {st.session_state['ga4_result_meta_data']['differences']}")
             st.write(f"Note: {st.session_state['ga4_result_meta_data']['note']}")
+
+
+        if create_timeline_graph_check and 'ga4_result_table' in st.session_state and 'date' in st.session_state['ga4_result_table'].columns:
+            st.session_state['ga4_result_table']['date'] = pd.to_datetime(st.session_state['ga4_result_table']['date'])
+            df = st.session_state['ga4_result_table'].set_index('date')
+            st.write(st.session_state['ga4_result_table'].index.name)
+            # 2) Пивот: столбцы = разные pagePath, значения = screenPageViews
+            col1, col2, col3 = st.columns(3)
+            with col1:
+                if len(st.session_state['ga4_result_api']['dimensions']) > 2:
+                    dimension_for_chart = st.selectbox("Select the dimension along which the data will be broken.",
+                                                       [dim['name'] for dim in st.session_state['ga4_result_api']['dimensions'] if dim['name'] != 'date'])
+                else:
+                    dimension_for_chart = [dim['name'] for dim in st.session_state['ga4_result_api']['dimensions'] if dim['name'] != 'date'][0]
+            with col2:
+                if len(st.session_state['ga4_result_api']['metrics']) > 1:
+                    metric_for_chart = st.selectbox("Select the metric whose data will be displayed on the graph.",
+                                                       [met['name'] for met in
+                                                        st.session_state['ga4_result_api']['metrics']])
+                else:
+                    metric_for_chart = st.session_state['ga4_result_api']['metrics'][0]['name']
+
+
+            ts = df.pivot_table(
+                index=df.index,
+                columns=dimension_for_chart,
+                values=metric_for_chart,
+                aggfunc='sum'
+            )
+            ts['Total'] = ts.sum(axis=1)
+
+
+
+
+
+            st.write(f"### Тренд «{metric_for_chart}» по «{dimension_for_chart}»")
+
+            df_long = (
+                ts
+                .reset_index()  # дата из индекса снова — колонка
+                .melt(id_vars='date',  # столбец с датой
+                      var_name=dimension_for_chart,  # имя новой колонки «значение измерения»
+                      value_name=metric_for_chart)  # имя новой колонки «значение метрики»
+            )
+
+
+            # -----------------
+            summary = (
+                ts
+                .sum(axis=0)  # сумма по строкам (дате) → Series
+                .reset_index(name='total')  # в DataFrame с колонками [dimension_for_chart, 'total']
+            )
+
+
+
+            summary.columns = [dimension_for_chart, metric_for_chart + '_total']
+
+            total_row =  summary.loc[summary[dimension_for_chart] == 'Total'].iloc[0].to_dict()
+
+            other_rows = summary[summary[dimension_for_chart] != 'Total']
+            with col3:
+                q = st.text_input("Search table:")
+
+                if q:
+                    filt = other_rows[other_rows[dimension_for_chart].str.contains(q, case=False, na=False)]
+                    other_rows = filt
+
+            # --- 3) Рендерим таблицу со сводкой и включаем выбор строки ---
+            gb = GridOptionsBuilder.from_dataframe(other_rows)
+            gb.configure_default_column(sortable=True, filter=True)
+            gb.configure_selection(selection_mode='multiple', use_checkbox=True)
+
+
+            grid_opts = gb.build()
+
+            grid_opts['pinnedTopRowData'] = [total_row]
+
+            grid_opts['getRowStyle'] = JsCode(f"""
+            function(params) {{
+              if (params.node.rowPinned) {{
+                return {{ backgroundColor: '#333333' }};
+              }}
+            }}
+            """)
+
+
+            data_records = other_rows
+            col_tab, col_fake= st.columns([1,2])
+            with col_tab:
+                grid_resp = AgGrid(
+                    data_records,
+                    fit_columns_on_grid_load=True,
+                    gridOptions=grid_opts,
+                    update_mode=GridUpdateMode.SELECTION_CHANGED,
+                    allow_unsafe_jscode=True,
+                    theme="streamlit"
+                )
+
+
+            selected = grid_resp['selected_rows']
+            if type(selected) == pd.DataFrame:
+                selected_values = [row for row in selected[dimension_for_chart]]
+                selected_values.append('Total')
+            # извлекаем выбранное значение измерения
+                df_long = df_long[df_long[dimension_for_chart].isin(selected_values) ]
+            else:
+                df_long = df_long[df_long[dimension_for_chart]=="Total"]
+
+
+
+            # -----------------
+
+
+
+
+            # Теперь сам Altair-чарт:
+            line = (
+                alt.Chart(df_long)
+                .mark_line(point=True)  # point=True рисует кружки на точках данных
+                .encode(
+                    x=alt.X('date:T', title='Дата'),
+                    y=alt.Y(f'{metric_for_chart}:Q',
+                            title=metric_for_chart,  # например 'activeUsers'
+                            scale=alt.Scale(zero=False)  # снимаем принудительный 0, чтобы не было «плоской» линиии
+                            ),
+                    color=alt.Color(f'{dimension_for_chart}:N', title=dimension_for_chart),  # легенда по измерению
+                    strokeDash=alt.condition(
+                        alt.datum[dimension_for_chart] == 'Total',
+                        alt.value([5, 5]),  # пунктир
+                        alt.value([])  # сплошная для остальных
+                    ),
+                    tooltip=[
+                        alt.Tooltip('date:T', title='Дата'),
+                        alt.Tooltip(f'{dimension_for_chart}:N', title=dimension_for_chart),
+                        alt.Tooltip(f'{metric_for_chart}:Q', title=metric_for_chart, format=',')  # разделитель тысяч
+                    ]
+                )
+                .properties(width=800, height=400)  # подберите свои размеры
+                .interactive()  # добавляет zoom & pan
+            )
+            area = (
+                alt.Chart(df_long)
+                .mark_area(opacity=0.15)  # 0.15 — 15% непрозрачности, можно варьировать
+                .transform_filter(
+                    alt.datum[dimension_for_chart] == 'Total'
+                )
+                .encode(
+                    x='date:T',
+                    y=alt.Y(f'{metric_for_chart}:Q'),
+                    y2=alt.value(0),  # от нуля до линии
+                    color=alt.value('#888888')  # общий цвет заливки, можно убрать и Altair возьмёт цвет лин
+                )
+            )
+
+            # 3) Комбинируем слои
+            chart = (area + line).properties(width=800, height=400).interactive()
+            with col_fake:
+                st.altair_chart(chart, use_container_width=True)
+
 
 
 
