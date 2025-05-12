@@ -661,6 +661,7 @@ if __name__ == '__main__':
                     for col_names in response[0]:
                         if response[0][col_names].dtype == 'float64':
                             response[0][col_names] = response[0][col_names].round(2)
+
                     st.session_state['ga4_result_table'] = response[0]
 
             elif len(ga4_text_for_prompt)  < 2:
@@ -669,7 +670,8 @@ if __name__ == '__main__':
 
         if 'ga4_result_api' in st.session_state:
             if create_timeline_graph_check and 'date' in st.session_state['ga4_result_table'].columns:
-                st.write(st.session_state['ga4_result_table'].loc[:, st.session_state['ga4_result_table'].columns != 'date'])
+                st.dataframe(st.session_state['ga4_result_table'].loc[:, st.session_state['ga4_result_table'].columns != 'date'])
+
             elif create_timeline_graph_check and st.session_state['ga4_result_table'].index.name == 'date':
                 df = st.session_state['ga4_result_table'].reset_index()
                 st.write(df.loc[:, df.columns != 'date'])
