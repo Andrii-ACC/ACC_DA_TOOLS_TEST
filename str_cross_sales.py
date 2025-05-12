@@ -681,6 +681,7 @@ if __name__ == '__main__':
                 else:
                     # Без измерений — просто одна строка со всеми метриками
                     summary = pd.DataFrame([st.session_state['ga4_result_table'][[metr['name'] for metr in st.session_state['ga4_result_api']['metrics']]].sum().to_dict()])
+                    print(summary)
                 st.dataframe(summary.sort_values(by=[[metr['name'] for metr in st.session_state['ga4_result_api']['metrics']]][0],ascending=False))
 
             elif create_timeline_graph_check and st.session_state['ga4_result_table'].index.name == 'date':
