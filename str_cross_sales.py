@@ -1,6 +1,6 @@
-# __import__('pysqlite3')
+__import__('pysqlite3')
 import sys
-# sys.modules['sqlite3'] = sys.modules.pop('pysqlite3')
+sys.modules['sqlite3'] = sys.modules.pop('pysqlite3')
 import pandas as pd
 from itertools import combinations
 import streamlit as st
@@ -731,7 +731,7 @@ if __name__ == '__main__':
             )
             ts['Total'] = ts.sum(axis=1)
             if ts['Total'].dtype == 'float64':
-                ts['Total'] = ts['Total']
+                ts['Total'] = ts['Total'].round(2)
 
 
 
