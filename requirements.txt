@@ -9,3 +9,4 @@ pysqlite3-binary
 webdriver-manager
 psutil
 google-analytics-data
+streamlit-aggrid==1.0.5
