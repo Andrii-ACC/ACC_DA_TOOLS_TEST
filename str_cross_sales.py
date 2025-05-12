@@ -705,7 +705,6 @@ if __name__ == '__main__':
         if create_timeline_graph_check and 'ga4_result_table' in st.session_state and 'date' in st.session_state['ga4_result_table'].columns:
             st.session_state['ga4_result_table']['date'] = pd.to_datetime(st.session_state['ga4_result_table']['date'])
             df = st.session_state['ga4_result_table'].set_index('date')
-            st.write(st.session_state['ga4_result_table'].index.name)
             # 2) Пивот: столбцы = разные pagePath, значения = screenPageViews
             col1, col2, col3 = st.columns(3)
             with col1:
@@ -713,14 +712,19 @@ if __name__ == '__main__':
                     dimension_for_chart = st.selectbox("Select the dimension along which the data will be broken.",
                                                        [dim['name'] for dim in st.session_state['ga4_result_api']['dimensions'] if dim['name'] != 'date'])
                 else:
-                    dimension_for_chart = [dim['name'] for dim in st.session_state['ga4_result_api']['dimensions'] if dim['name'] != 'date'][0]
+                    dimension_for_chart = st.selectbox("Select the dimension along which the data will be broken.",
+                                                       [dim['name'] for dim in
+                                                        st.session_state['ga4_result_api']['dimensions'] if
+                                                        dim['name'] != 'date'])
             with col2:
                 if len(st.session_state['ga4_result_api']['metrics']) > 1:
                     metric_for_chart = st.selectbox("Select the metric whose data will be displayed on the graph.",
                                                        [met['name'] for met in
                                                         st.session_state['ga4_result_api']['metrics']])
                 else:
-                    metric_for_chart = st.session_state['ga4_result_api']['metrics'][0]['name']
+                    metric_for_chart = st.selectbox("Select the metric whose data will be displayed on the graph.",
+                                                    [met['name'] for met in
+                                                     st.session_state['ga4_result_api']['metrics']])
 
 
             ts = df.pivot_table(
