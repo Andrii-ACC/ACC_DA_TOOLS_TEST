@@ -205,10 +205,10 @@ class GA4_Chat_Answer:
         class FilterExpression(BaseModelF):
             """Defines a filter expression that can combine multiple filtering conditions using logical operators."""
 
-            filter: Optional[Filter] = Field(None, description='''A single filtering condition applied to a specific field. All filters in the same expression must target either dimensions or metrics, but not both.''')
+            filter: Optional[Filter] = Field(None, description='''A single filter condition applied to a specific field. All filters in a single expression must target either dimensions or metrics, but not both. Use this option to include data that matches the filter.''')
             and_group: Optional[AndGroup] = Field(None, description='''A group of filters combined with AND logic. All conditions within this group must be met for the data to be included.''')
             or_group: Optional[OrGroup] = Field(None, description='''A group of filters combined with OR logic. At least one condition within this group must be met for the data to be included.''')
-            not_expression: Optional[FilterExpression_sub1] = Field(None, description='''Negates the given filter expression. Data that matches this condition will be excluded from the results.''')
+            not_expression: Optional[FilterExpression_sub1] = Field(None, description='''Negates the given filter expression. Using for Excluding data. Data that matches this condition will be excluded from the results''')
 
 
 
