@@ -230,6 +230,7 @@ if __name__ == '__main__':
 
 
             df_main = pd.read_csv(uploaded_file)
+
             st.write("File uploaded successfully:")
             st.write(df_main.head())
             if len(df_main.columns) < 4:
@@ -239,6 +240,7 @@ if __name__ == '__main__':
 
             if list(df_main.columns) != ['transaction_id', 'product_name', 'product_quantity', 'total_revenue']:
                 df_main.columns = ['transaction_id', 'product_name', 'product_quantity', 'total_revenue']
+            df_main['total_revenue'] = pd.to_numeric(df_main['total_revenue'], errors='coerce')
         st.subheader("Select options")
         radio_quantity_items = st.radio("Choose quantity of items for calculations in a cross-selling table", ["Choose",1,2,3,4,5])
         radio_table_type_var = st.radio("Choose type of result table", ['None','25 items','100 items','25 AOV','100 AOV'])
